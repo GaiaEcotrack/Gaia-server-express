@@ -10,6 +10,18 @@ const app = express();
 // Middleware to parse JSON
 app.use(express.json());
 
+app.get("/",(req, res) => {
+    res.json({ message: "Welcome to the Gaia-Ecotrack server" });
+  });
+
+  app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    next();
+  });
+
 // Import routes
 // const userRoutes = require('./routes/userRoutes');
 // const productRoutes = require('./routes/productRoutes');
@@ -19,7 +31,7 @@ app.use(express.json());
 // app.use('/api/products', productRoutes);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error(err));
 
