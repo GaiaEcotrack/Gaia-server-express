@@ -32,7 +32,9 @@ Crea un archivo `.env` en la raíz del proyecto y define las variables de entorn
 
 ```plaintext
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/mydatabase
+MONGO_URI="Pedir URL"
+API_HM='Pedir URL'
+
  ``` 
 ## Uso
  ```bash

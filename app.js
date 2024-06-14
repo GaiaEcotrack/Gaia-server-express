@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const cors = require('cors');
 
 // Load environment variables
 dotenv.config();
@@ -9,19 +10,15 @@ const app = express();
 
 // Middleware to parse JSON
 app.use(express.json());
-
-app.get("/",(req, res) => {
-    res.json({ message: "Welcome to the Gaia-Ecotrack server" });
-  });
-
-  app.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    next();
-  });
-
+const corsOptions = {
+    origin: '*',
+    methods: ['GET', 'POST','PUT','DELETE'],
+    allowedHeaders: ['Content-Type'],
+    exposedHeaders: ['Content-Length'],
+    credentials: true
+  };
+  
+  app.use(cors(corsOptions));
 // Import routes
 // const userRoutes = require('./routes/userRoutes');
 // const productRoutes = require('./routes/productRoutes');
