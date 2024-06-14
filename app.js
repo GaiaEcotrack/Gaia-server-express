@@ -25,10 +25,12 @@ app.get("/",(req, res) => {
 // Import routes
 // const userRoutes = require('./routes/userRoutes');
 // const productRoutes = require('./routes/productRoutes');
+const apiRoutes = require('./routes/device');
 
 // // Use routes
 // app.use('/api/users', userRoutes);
 // app.use('/api/products', productRoutes);
+app.use('/api', apiRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
