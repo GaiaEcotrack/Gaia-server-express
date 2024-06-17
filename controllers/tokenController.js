@@ -53,14 +53,14 @@ const sendMessageContract = async(wallet,tokens,kw)=>{
         }
     },
     },
-    gasLimit: gasToSpend(gas),
+    gasLimit: 59809645200,
     value: 0,
   };
 
   async function signer() {
     // Create a message extrinsic
     const transferExtrinsic = await gearApi.message.send(message, metadata);
-    const mnemonic = 'sun pill sentence spoil ripple october funny ensure illness equal car demise';
+    const mnemonic = 'ugly language unfold identify envelope twelve amount ability barely noodle exile snow';
     const { seed } = GearKeyring.generateSeed(mnemonic);
   
     const keyring = await GearKeyring.fromSeed(seed, 'admin');
