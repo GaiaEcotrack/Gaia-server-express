@@ -1,18 +1,37 @@
 const axios = require('axios');
 const moment = require('moment-timezone');
 
+const Credenciales = require('../models/credenciales')
+
+// Configurar la URL de conexión a MongoDB y la base de datos
+
 // OBTENER DATOS GENERADOS DEL DISPOSITIVO
 const getDataFromExternalApi = async (req, res) => {
+    let client;
+
     try {
         const api = process.env.API_HM;
 
-        // Obtén el username y la password del cuerpo de la solicitud
-        const { user_name, password } = req.body;
+        // Obtén el username del cuerpo de la solicitud
+        const { user_name } = req.body;
 
-        // Verifica que se hayan proporcionado el username y la password
-        if (!user_name || !password) {
-            return res.status(400).send('Se requiere username y password');
+        // Verifica que se haya proporcionado el username
+        if (!user_name) {
+            return res.status(400).send('Se requiere username');
         }
+
+
+        // Buscar las credenciales en la base de datos
+        const user = await Credenciales.findOne({ username: user_name });
+
+
+        if (!user) {
+            console.log(user);
+            return res.status(401).send('Usuario no encontrado');
+        }
+
+        // Usa la contraseña almacenada en la base de datos
+        const password = user.password;
 
         // Realiza la solicitud para obtener el token
         const authResponse = await axios.post(`${api}/iam/auth_login`, {
@@ -68,6 +87,11 @@ const getDataFromExternalApi = async (req, res) => {
         // Maneja errores
         console.error(error);
         res.status(500).send('Error al obtener datos de la API externa');
+    } finally {
+        // Asegúrate de cerrar la conexión a la base de datos
+        if (client) {
+            await client.close();
+        }
     }
 };
 
