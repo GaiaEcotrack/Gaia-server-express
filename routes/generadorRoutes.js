@@ -15,6 +15,7 @@ router.get('/users', tokenController.getAllUsers);
 router.post('/users', tokenController.addUser);
 
 router.delete('/users/:id', tokenController.deleteUser);
+router.put('/users/:id',tokenController.updateUser)
 
 
 module.exports = router;

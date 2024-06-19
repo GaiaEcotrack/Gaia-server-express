@@ -72,27 +72,39 @@ async function actualizarKwGeneradoParaUsuarios() {
         const users = await generador.find();
 
         for (let user of users) {
-            const kwGenerado = await updateKw(user.secret_name);
+            let kwGeneradoHoy = await updateKw(user.secret_name);
 
-            user.generatedKW = kwGenerado;
-            const tokens = Math.floor(kwGenerado / 1000);
-            user.tokens = tokens;
+            // Convertir a número entero exacto
+            kwGeneradoHoy = parseInt(kwGeneradoHoy);
+
+            // Sumar el nuevo kW generado al valor existente en la base de datos
+            const kwTotalActualizado = user.generatedKW + kwGeneradoHoy;
+
+            user.generatedKW = kwTotalActualizado;
+            const tokens = Math.floor(kwGeneradoHoy / 1000);
+            const tokensAct = user.tokens + tokens
+            user.tokens = tokensAct;
             await user.save();
-            console.log(`Usuario ${user.name} actualizado con kwGenerado: ${kwGenerado}`);
+            console.log(`Usuario ${user.name} actualizado con kwGenerado: ${kwTotalActualizado}`);
 
-            for (let i = 0; i < user.tokens; i++) {
+            for (let i = 0; i < tokens; i++) {
                 let tokensEnviados = false;
 
                 while (!tokensEnviados) {
                     try {
-                        await sendContracMessage.sendMessageContract(user.wallet, 1, user.generatedKW);
+                        await sendContracMessage.sendMessageContract(user.wallet, 1, 1); 
                         tokensEnviados = true;
                         console.log(`Token ${i + 1} enviado a Usuario ${user.name}`);
                     } catch (error) {
                         console.error(`Error al enviar token ${i + 1} a Usuario ${user.name}:`, error.message);
-                        await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar 5 segundos antes de intentar de nuevo
+                        // Esperar 1 segundo antes de intentar de nuevo
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
+
+                // Esperar 3 segundos antes de enviar el siguiente token
+                console.log("waiting");
+                await new Promise(resolve => setTimeout(resolve, 3000));
             }
         }
 

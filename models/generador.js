@@ -6,7 +6,8 @@ const generadorSchema = new mongoose.Schema({
   tokens: { type: Number, default: 0 },
   device_id:{type : Number,default:0},
   secret_name:String,
-  wallet:String
+  wallet:String,
+  installation_company:String
 });
 
 const Generador = mongoose.model('Generador', generadorSchema);

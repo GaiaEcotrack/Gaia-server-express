@@ -22,21 +22,19 @@ const sendMessageContract = async(wallet,tokens,kw)=>{
   const gas = await gearApi.program.calculateGas.handle(
     decodeAddress(wallet) ?? "0x00",
     programIDFT,
-    { GetRewards: {
+    { getrewards: {
       "tx_id":null,
+      "to":decodeAddress(wallet),
       "tokens": tokens,
       "password": "E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6",
-      "transactions": {
-          "to": decodeAddress(wallet),
-          "amount": tokens,
-          "kw": kw,
-          "surplus": 10
-      }
   } },
     0,
     true,
     metadata
   );
+
+
+  const gasCalculate = 1972133321 * 2
 
   const message= {
     destination: programIDFT, // programId
@@ -44,23 +42,18 @@ const sendMessageContract = async(wallet,tokens,kw)=>{
       getrewards:{
         "tx_id":null,
         "tokens": tokens,
+        "to":decodeAddress(wallet),
         "password": "E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6",
-        "transactions": {
-            "to": decodeAddress(wallet),
-            "amount": tokens,
-            "kw": kw,
-            "surplus": 10
-        }
     },
     },
-    gasLimit: 59809645200,
+    gasLimit:gasCalculate,
     value: 0,
   };
 
   async function signer() {
     // Create a message extrinsic
     const transferExtrinsic = await gearApi.message.send(message, metadata);
-    const mnemonic = 'ugly language unfold identify envelope twelve amount ability barely noodle exile snow';
+    const mnemonic = 'sun pill sentence spoil ripple october funny ensure illness equal car demise';
     const { seed } = GearKeyring.generateSeed(mnemonic);
   
     const keyring = await GearKeyring.fromSeed(seed, 'admin');
@@ -135,10 +128,10 @@ const getAllUsers = async (req, res) => {
 
 // Controlador para agregar un nuevo usuario
 const addUser = async (req, res) => {
-  const { name , wallet , secret_name } = req.body;
+  const { name , wallet , secret_name,installation_company } = req.body;
 
   try {
-    const newGenerador = new Generador({ name,wallet,secret_name });
+    const newGenerador = new Generador({ name,wallet,secret_name,installation_company });
     await newGenerador.save();
 
     res.status(201).send('Usuario agregado correctamente');
@@ -146,6 +139,34 @@ const addUser = async (req, res) => {
     res.status(500).send('Error al agregar usuario');
   }
 };
+
+
+
+const updateUser = async (req, res) => {
+  const userId = req.params.id;
+  const updates = req.body;
+
+  try {
+    const user = await Generador.findById(userId);
+    if (!user) {
+      return res.status(404).send('Usuario no encontrado');
+    }
+
+    // Actualizar solo las propiedades recibidas en la solicitud
+    for (let key in updates) {
+      if (user[key] !== undefined) {
+        user[key] = updates[key];
+      }
+    }
+
+    await user.save();
+
+    res.status(200).send('Usuario actualizado correctamente');
+  } catch (error) {
+    res.status(500).send('Error al actualizar usuario');
+  }
+};
+
 
 const deleteUser = async (req, res) => {
   const userId = req.params.id;
@@ -185,5 +206,6 @@ module.exports = {
   addUser,
   updateTokens,
   deleteUser,
-  sendMessageContract
+  sendMessageContract,
+  updateUser
 };
