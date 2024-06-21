@@ -17,5 +17,8 @@ router.post('/users', tokenController.addUser);
 router.delete('/users/:id', tokenController.deleteUser);
 router.put('/users/:id',tokenController.updateUser)
 
+// ruta para filtrar usuarios segun empresa instaladora
+router.get('/byinstaller/:installation_company', tokenController.getUsersByInstaller);
+
 
 module.exports = router;

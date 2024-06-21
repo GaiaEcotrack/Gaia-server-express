@@ -199,6 +199,24 @@ const updateTokens = async () => {
   }
 };
 
+
+// controlador para filtrar usuarios segun empresa instaladora
+const getUsersByInstaller = async (req, res) => {
+  const { installation_company } = req.params;
+
+  try {
+    const generadores = await Generador.find({ installation_company });
+
+    if (!generadores.length) {
+      return res.status(404).send('No se encontraron usuarios para la empresa instaladora proporcionada');
+    }
+
+    res.json(generadores);
+  } catch (error) {
+    res.status(500).send('Error al obtener usuarios por empresa instaladora');
+  }
+};
+
 module.exports = {
   generateKW,
   getUserTokens,
@@ -207,5 +225,6 @@ module.exports = {
   updateTokens,
   deleteUser,
   sendMessageContract,
-  updateUser
+  updateUser,
+  getUsersByInstaller
 };
