@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const updateFunctions = require('./controllers/updateKwController')
 const sendContracMessage = require('./controllers/tokenController')
+const verifyToken = require('./middlewares/authMiddleware');
+const cron = require('node-cron');
 
 // Load environment variables
 dotenv.config();
@@ -63,6 +65,10 @@ app.get('/update-users', async (req, res) => {
   }
 });
 
+app.get('/api/protected-route', verifyToken, (req, res) => {
+  // req.user contiene la información decodificada del token
+  res.json({ message: 'This is a protected route', user: req.user });
+});
 
 
 // Connect to MongoDB
@@ -83,7 +89,13 @@ mongoose.connect(process.env.MONGO_URI)
 //   }
   
 //   // Start updating users
-//   // startUpdatingUsers();
+cron.schedule('00 20 * * *', async () => {
+  console.log('Iniciando la actualización de usuarios programada.');
+  await startUpdatingUsers();
+}, {
+  scheduled: true,
+  timezone: "America/Bogota" // Zona horaria de Colombia
+});
 // // sendContracMessage.sendMessageContract()
 const PORT = process.env.PORT || 5100;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

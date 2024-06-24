@@ -1,4 +1,5 @@
 const Generador = require('../models/generador');
+const { faker } = require('@faker-js/faker');
 const {GearApi , ProgramMetadata , GearKeyring ,GasInfo, decodeAddress,encodeAddress} = require('@gear-js/api')
 
 
@@ -22,11 +23,15 @@ const sendMessageContract = async(wallet,tokens,kw)=>{
   const gas = await gearApi.program.calculateGas.handle(
     decodeAddress(wallet) ?? "0x00",
     programIDFT,
-    { getrewards: {
+    { Reward: {
       "tx_id":null,
       "to":decodeAddress(wallet),
-      "tokens": tokens,
-      "password": "E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6",
+      "amount": tokens,
+      "transactions": {
+        "to": decodeAddress(wallet),
+        "amount": tokens,
+        "kw": kw,
+    },
   } },
     0,
     true,
@@ -38,14 +43,16 @@ const sendMessageContract = async(wallet,tokens,kw)=>{
 
   const message= {
     destination: programIDFT, // programId
-    payload: {
-      getrewards:{
-        "tx_id":null,
-        "tokens": tokens,
-        "to":decodeAddress(wallet),
-        "password": "E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6",
+    payload:     { Reward: {
+      "tx_id":null,
+      "to":decodeAddress(wallet),
+      "amount": tokens,
+      "transactions": {
+        "to": decodeAddress(wallet),
+        "amount": tokens,
+        "kw": kw,
     },
-    },
+  } },
     gasLimit:gasCalculate,
     value: 0,
   };
@@ -217,6 +224,41 @@ const getUsersByInstaller = async (req, res) => {
   }
 };
 
+// Controlador para crear 100 usuarios
+const createUsers = async (req, res) => {
+  const users = [];
+  const company = ["Fibra_Andina","Green_House","Proselec","Fullenergysolar"]
+  const secretNames = ["Monitoreo_3", "Monitoreo_2", "Monitoreo_Hoymiles"];
+  const wallets =["5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF","5CwBHsfFRpSwA4zFgJC7RDdAZXckqSiHS8PQtYQ81SBjCWeS","5FWNZQuDEbLSgT9KKzbQjFiiLhyxWfDAyusFvd7tshWKbo1U","5HTJkawMqHSvVRi2XrE7vdTU4t5Vq1EDv2ZDeWSwNxmmQKEK","5G8mzxiCCW4VALGRGdaqGPfrMLp7CeaVfk5XwPhDDaDyGEgE"]
+
+  for (let i = 0; i < 100; i++) {
+    users.push({
+      name: faker.name.fullName(),
+      wallet: wallets[Math.floor(Math.random() * wallets.length)],
+      secret_name: secretNames[Math.floor(Math.random() * secretNames.length)],
+      installation_company:company[Math.floor(Math.random() * company.length)]
+    });
+  }
+
+  try {
+    for (const user of users) {
+      await addUser({ body: user }, { status: (code) => ({ send: (message) => console.log(message) }) });
+    }
+    res.status(200).send('100 usuarios creados con éxito');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al crear usuarios');
+  }
+};
+const countUsers = async (req, res) => {
+  try {
+    const count = await Generador.countDocuments();
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(500).send('Error al contar usuarios');
+  }
+};
+
 module.exports = {
   generateKW,
   getUserTokens,
@@ -226,5 +268,7 @@ module.exports = {
   deleteUser,
   sendMessageContract,
   updateUser,
-  getUsersByInstaller
+  getUsersByInstaller,
+  createUsers,
+  countUsers
 };

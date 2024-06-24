@@ -19,6 +19,8 @@ router.put('/users/:id',tokenController.updateUser)
 
 // ruta para filtrar usuarios segun empresa instaladora
 router.get('/byinstaller/:installation_company', tokenController.getUsersByInstaller);
+router.get('/createall', tokenController.createUsers);
+router.get('/count', tokenController.countUsers);
 
 
 module.exports = router;
