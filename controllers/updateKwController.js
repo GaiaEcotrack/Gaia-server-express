@@ -1,8 +1,8 @@
 const axios = require('axios');
 const moment = require('moment-timezone');
-const generador = require('../models/generador')
+const generador = require('../models/generador');
 const Credenciales = require('../models/credenciales');
-const sendContracMessage = require('./tokenController')
+const sendContracMessage = require('./tokenController');
 
 const updateKw = async (username) => {
     try {
@@ -50,13 +50,9 @@ const updateKw = async (username) => {
 
         const currentDate = moment().tz('America/Bogota').format('YYYY-MM-DD');
 
-        const response = await axios.post(`${api}/pvm-data/data_count_station_real_data`,
-            { sid, mode: 1, date: currentDate },
-            {
-                headers: {
-                    'Cookie': cookie
-                }
-            }
+        const response = await axios.post(`${api}/pvm-data/data_count_station_real_data`, 
+            { sid, mode: 1, date: currentDate }, 
+            { headers: { 'Cookie': cookie } }
         );
 
         return response.data.data.today_eq;
@@ -73,38 +69,30 @@ async function actualizarKwGeneradoParaUsuarios() {
 
         for (let user of users) {
             let kwGeneradoHoy = await updateKw(user.secret_name);
-
-            // Convertir a número entero exacto
             kwGeneradoHoy = parseInt(kwGeneradoHoy);
+            user.generatedKW += kwGeneradoHoy;
 
-            // Sumar el nuevo kW generado al valor existente en la base de datos
-            const kwTotalActualizado = user.generatedKW + kwGeneradoHoy;
-
-            user.generatedKW = kwTotalActualizado;
             const tokens = Math.floor(kwGeneradoHoy / 1000);
-            const tokensAct = user.tokens + tokens
-            user.tokens = tokensAct;
+            user.tokens += tokens;
+
             await user.save();
-            console.log(`Usuario ${user.name} actualizado con kwGenerado: ${kwTotalActualizado}`);
+            console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
 
             for (let i = 0; i < tokens; i++) {
                 let tokensEnviados = false;
 
                 while (!tokensEnviados) {
                     try {
-                        await sendContracMessage.sendMessageContract(user.wallet, 1, 1); 
+                        await sendContracMessage.sendMessageContract(user.wallet, 1, 1);
                         tokensEnviados = true;
                         console.log(`Token ${i + 1} enviado a Usuario ${user.name}`);
                     } catch (error) {
                         console.error(`Error al enviar token ${i + 1} a Usuario ${user.name}:`, error.message);
-                        // Esperar 1 segundo antes de intentar de nuevo
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await new Promise(resolve => setTimeout(resolve, 3000));
                     }
                 }
 
-                // Esperar 3 segundos antes de enviar el siguiente token
-                console.log("waiting");
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 

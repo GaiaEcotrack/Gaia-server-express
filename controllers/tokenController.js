@@ -18,28 +18,10 @@ const sendMessageContract = async(wallet,tokens,kw)=>{
   const programIDFT = process.env.MAIN_CONTRACT_ID
   const meta = process.env.MAIN_CONTRACT_METADATA
   const metadata = ProgramMetadata.from(meta);
-  const generadorUser = await Generador.find();
-
-  const gas = await gearApi.program.calculateGas.handle(
-    decodeAddress(wallet) ?? "0x00",
-    programIDFT,
-    { Reward: {
-      "tx_id":null,
-      "to":decodeAddress(wallet),
-      "amount": tokens,
-      "transactions": {
-        "to": decodeAddress(wallet),
-        "amount": tokens,
-        "kw": kw,
-    },
-  } },
-    0,
-    true,
-    metadata
-  );
 
 
-  const gasCalculate = 1972133321 * 2
+
+  const gasCalculate = 1972133321 * 4
 
   const message= {
     destination: programIDFT, // programId

@@ -43,27 +43,27 @@ app.use('/auth', authRoutes);
 let isUpdating = false;
 
 // Función para actualizar usuarios
-// async function startUpdatingUsers() {
-//     try {
-//         isUpdating = true; // Indicar que se está actualizando
-//         await updateFunctions.actualizarKwGeneradoParaUsuarios();
-//         console.log('Proceso de actualización completado.');
-//     } catch (error) {
-//         console.error('Error durante la actualización de usuarios:', error.message);
-//     } finally {
-//         isUpdating = false; // Indicar que se ha finalizado la actualización
-//     }
-// }
+async function startUpdatingUsers() {
+    try {
+        isUpdating = true; // Indicar que se está actualizando
+        await updateFunctions.actualizarKwGeneradoParaUsuarios();
+        console.log('Proceso de actualización completado.');
+    } catch (error) {
+        console.error('Error durante la actualización de usuarios:', error.message);
+    } finally {
+        isUpdating = false; // Indicar que se ha finalizado la actualización
+    }
+}
 
-// // Ruta GET para iniciar el proceso de actualización
-// app.get('/update-users', async (req, res) => {
-//     if (isUpdating) {
-//         res.send('Se está realizando el proceso de actualización.');
-//     } else {
-//         await startUpdatingUsers();
-//         res.send('Se terminó el proceso de actualización.');
-//     }
-// });
+// Ruta GET para iniciar el proceso de actualización
+app.get('/update-users', async (req, res) => {
+    if (isUpdating) {
+        res.send('Se está realizando el proceso de actualización.');
+    } else {
+        await startUpdatingUsers();
+        res.send('Se terminó el proceso de actualización.');
+    }
+});
 
 app.get('/api/protected-route', verifyToken, (req, res) => {
     // req.user contiene la información decodificada del token
@@ -76,7 +76,7 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.error(err));
 
 // Start updating users
-cron.schedule('00 20 * * *', async () => {
+cron.schedule('30 20 * * *', async () => {
     console.log('Iniciando la actualización de usuarios programada.');
     await startUpdatingUsers();
 }, {
