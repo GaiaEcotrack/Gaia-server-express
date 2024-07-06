@@ -12,61 +12,53 @@ const gasToSpend = (gasInfo) => {
   return gasLimit;
 };
 
+const gearApiInstance = new GearApi({ providerAddress: 'wss://testnet.vara-network.io' });
 
-const sendMessageContract = async(wallet,tokens,kw)=>{
-  const gearApi = await GearApi.create({ providerAddress: 'wss://testnet.vara-network.io' });
-  const programIDFT = process.env.MAIN_CONTRACT_ID
-  const meta = process.env.MAIN_CONTRACT_METADATA
-  const metadata = ProgramMetadata.from(meta);
+const sendMessageContract = async (wallet, tokens, kw) => {
+  try {
+    const programIDFT = process.env.MAIN_CONTRACT_ID;
+    const meta = process.env.MAIN_CONTRACT_METADATA;
+    const metadata = ProgramMetadata.from(meta);
 
+    const gasCalculate = 1972133321 * 4;
 
+    const message = {
+      destination: programIDFT,
+      payload: {
+        Reward: {
+          tx_id: null,
+          to: decodeAddress(wallet),
+          amount: tokens,
+          transactions: {
+            to: decodeAddress(wallet),
+            amount: tokens,
+            kw: kw,
+          },
+        },
+      },
+      gasLimit: gasCalculate,
+      value: 0,
+    };
 
-  const gasCalculate = 1972133321 * 4
+    // Reutilizar la instancia de GearApi creada previamente
+    const transferExtrinsic = await gearApiInstance.message.send(message, metadata);
 
-  const message= {
-    destination: programIDFT, // programId
-    payload:     { Reward: {
-      "tx_id":null,
-      "to":decodeAddress(wallet),
-      "amount": tokens,
-      "transactions": {
-        "to": decodeAddress(wallet),
-        "amount": tokens,
-        "kw": kw,
-    },
-  } },
-    gasLimit:gasCalculate,
-    value: 0,
-  };
-
-  async function signer() {
-    // Create a message extrinsic
-    const transferExtrinsic = await gearApi.message.send(message, metadata);
     const mnemonic = 'sun pill sentence spoil ripple october funny ensure illness equal car demise';
     const { seed } = GearKeyring.generateSeed(mnemonic);
-  
     const keyring = await GearKeyring.fromSeed(seed, 'admin');
-    
 
     await transferExtrinsic.signAndSend(keyring, (event) => {
-
       try {
         console.log("Successful transaction");
       } catch (error) {
-        console.log("error");
-
+        console.error("Error al manejar evento de transacción:", error);
       }
     });
-
-}
-try {
-
-  await signer()
-} catch (error) {
-  console.error(error);
-}
-
-}
+  } catch (error) {
+    console.error("Error en sendMessageContract:", error);
+    throw error; // Propagar el error para manejarlo adecuadamente en el contexto superior
+  }
+};
 
 // Controlador para registrar los kW generados por un usuario
 const generateKW = async (req, res) => {
@@ -187,6 +179,14 @@ const updateTokens = async () => {
     console.error('Error al actualizar tokens', error);
   }
 };
+const deleteAllUsers = async (req, res) => {
+  try {
+    await Generador.deleteMany({});
+    res.status(200).send('Todos los usuarios han sido eliminados');
+  } catch (error) {
+    res.status(500).send('Error eliminando usuarios: ' + error.message);
+  }
+};
 
 
 // controlador para filtrar usuarios segun empresa instaladora
@@ -218,7 +218,7 @@ const createUsers = async (req, res) => {
       name: faker.name.fullName(),
       wallet: wallets[Math.floor(Math.random() * wallets.length)],
       secret_name: secretNames[Math.floor(Math.random() * secretNames.length)],
-      installation_company:company[Math.floor(Math.random() * company.length)]
+      installation_company:company[Math.floor(Math.random() * company.length)],
     });
   }
 
@@ -252,5 +252,6 @@ module.exports = {
   updateUser,
   getUsersByInstaller,
   createUsers,
-  countUsers
+  countUsers,
+  deleteAllUsers
 };

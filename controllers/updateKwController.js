@@ -79,20 +79,26 @@ async function actualizarKwGeneradoParaUsuarios() {
             console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
 
             for (let i = 0; i < tokens; i++) {
-                let tokensEnviados = false;
+                let tokenEnviado = false;
+                let intentos = 0;
 
-                while (!tokensEnviados) {
+                while (!tokenEnviado && intentos < 3) { // Intentar hasta 3 veces antes de seguir con el siguiente token
                     try {
                         await sendContracMessage.sendMessageContract(user.wallet, 1, 1);
-                        tokensEnviados = true;
+                        tokenEnviado = true;
                         console.log(`Token ${i + 1} enviado a Usuario ${user.name}`);
                     } catch (error) {
+                        intentos++;
                         console.error(`Error al enviar token ${i + 1} a Usuario ${user.name}:`, error.message);
-                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        await new Promise(resolve => setTimeout(resolve, 3000)); // Espera de 3 segundos antes de reintentar
                     }
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                if (!tokenEnviado) {
+                    console.error(`No se pudo enviar el token ${i + 1} a Usuario ${user.name} después de varios intentos.`);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Espera adicional de 1 segundo entre cada token enviado
             }
         }
 
@@ -101,5 +107,6 @@ async function actualizarKwGeneradoParaUsuarios() {
         console.error('Error al actualizar usuarios:', error.message);
     }
 }
+
 
 module.exports = { actualizarKwGeneradoParaUsuarios, updateKw };

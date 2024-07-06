@@ -76,7 +76,7 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.error(err));
 
 // Start updating users
-cron.schedule('30 20 * * *', async () => {
+cron.schedule('00 20 * * *', async () => {
     console.log('Iniciando la actualización de usuarios programada.');
     await startUpdatingUsers();
 }, {
