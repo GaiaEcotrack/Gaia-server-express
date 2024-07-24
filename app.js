@@ -90,7 +90,7 @@ cron.schedule('00 20 * * *', async () => {
 const IP = '0.0.0.0'; // Cambia esta IP por la correcta de tu servidor
 const PORT =  8080;
 
-app.listen(PORT, IP, () => {
+app.listen(PORT, () => {
     console.log(`Server running on http://${IP}:${PORT}`);
 });
 
