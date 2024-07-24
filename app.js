@@ -6,6 +6,7 @@ const updateFunctions = require('./controllers/updateKwController');
 const sendContracMessage = require('./controllers/tokenController');
 const verifyToken = require('./middlewares/authMiddleware');
 const cron = require('node-cron');
+const morgan = require('morgan');
 
 // Load environment variables
 dotenv.config();
@@ -14,6 +15,8 @@ const app = express();
 
 // Middleware to parse JSON
 app.use(express.json());
+// app.use(morgan('combined'));
+app.use(morgan('tiny'));
 
 const corsOptions = {
     origin: '*',
@@ -85,7 +88,7 @@ cron.schedule('00 20 * * *', async () => {
 });
 
 const IP = '0.0.0.0'; // Cambia esta IP por la correcta de tu servidor
-const PORT = process.env.PORT || 5100;
+const PORT =  8080;
 
 app.listen(PORT, IP, () => {
     console.log(`Server running on http://${IP}:${PORT}`);

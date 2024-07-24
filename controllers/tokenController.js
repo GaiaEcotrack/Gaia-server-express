@@ -20,7 +20,8 @@ const sendMessageContract = async (wallet, tokens, kw) => {
     const meta = process.env.MAIN_CONTRACT_METADATA;
     const metadata = ProgramMetadata.from(meta);
 
-    const gasCalculate = 1972133321 * 4;
+
+    const gasCalculate = 1972133321 * 10;
 
     const message = {
       destination: programIDFT,
@@ -40,6 +41,17 @@ const sendMessageContract = async (wallet, tokens, kw) => {
       value: 0,
     };
 
+    const codeId =
+    "0xbef85a7b9b0dba23579d3a303ebf9f3a0657c47118f3f22c4afa769ccf5fae61";
+    const gas = await gearApiInstance.program.calculateGas.initCreate(
+      programIDFT,
+      codeId,
+      "0x00",
+      0,
+      true
+    );
+
+    console.log(gas.toHuman().min_limit);
     // Reutilizar la instancia de GearApi creada previamente
     const transferExtrinsic = await gearApiInstance.message.send(message, metadata);
 
