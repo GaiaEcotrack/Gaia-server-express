@@ -12,6 +12,9 @@ const getDataFromExternalApi = async (req, res) => {
     try {
         const api = process.env.API_HM;
 
+        // Verifica que la URL de la API esté correctamente configurada
+        console.log('API URL:', api);
+
         // Obtén el username del cuerpo de la solicitud
         const { user_name } = req.body;
 
@@ -20,10 +23,8 @@ const getDataFromExternalApi = async (req, res) => {
             return res.status(400).send('Se requiere username');
         }
 
-
         // Buscar las credenciales en la base de datos
         const user = await Credenciales.findOne({ username: user_name });
-
 
         if (!user) {
             console.log(user);
@@ -66,7 +67,7 @@ const getDataFromExternalApi = async (req, res) => {
         }
 
         // Obtiene el ID necesario para la siguiente solicitud
-        const sid = initialResponse.data.data.list[0].id; // Aquí obtienes el ID
+        const sid = initialResponse.data.data.list[0].id;
 
         // Obtén la fecha actual en la zona horaria de Colombia en formato YYYY-MM-DD
         const currentDate = moment().tz('America/Bogota').format('YYYY-MM-DD');
@@ -85,7 +86,10 @@ const getDataFromExternalApi = async (req, res) => {
         res.json(response.data);
     } catch (error) {
         // Maneja errores
-        console.error(error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Error config:', error.config);
+        console.error('Error request:', error.request ? error.request : 'No request made');
         res.status(500).send('Error al obtener datos de la API externa');
     } finally {
         // Asegúrate de cerrar la conexión a la base de datos
@@ -94,6 +98,7 @@ const getDataFromExternalApi = async (req, res) => {
         }
     }
 };
+
 
 const getDataOfDevice = async (req, res) => {
     let client;
