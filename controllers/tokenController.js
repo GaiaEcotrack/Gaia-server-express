@@ -3,16 +3,17 @@ const { faker } = require('@faker-js/faker');
 const {GearApi , ProgramMetadata , GearKeyring ,GasInfo, decodeAddress,encodeAddress} = require('@gear-js/api')
 
 
+
+const gearApiInstance = new GearApi({ providerAddress: 'wss://testnet.vara-network.io' });
+
 const gasToSpend = (gasInfo) => {
   const gasHuman = gasInfo.toHuman();
   const minLimit = gasHuman.min_limit?.toString() ?? "0";
-  const parsedGas = Number(minLimit.replaceAll(",", ""));
-  const gasPlusTenPorcent = Math.round(parsedGas + parsedGas * 0.1);
+  const parsedGas = Number(minLimit.replaceAll(',', ''));
+  const gasPlusTenPorcent = Math.round(parsedGas + parsedGas * 0.10);
   const gasLimit = BigInt(gasPlusTenPorcent);
   return gasLimit;
-};
-
-const gearApiInstance = new GearApi({ providerAddress: 'wss://testnet.vara-network.io' });
+}
 
 const sendMessageContract = async (wallet, tokens, kw) => {
   try {
@@ -20,7 +21,26 @@ const sendMessageContract = async (wallet, tokens, kw) => {
     const meta = process.env.MAIN_CONTRACT_METADATA;
     const metadata = ProgramMetadata.from(meta);
 
-    const gasCalculate = 1972133321 * 10;
+    const gas = await gearApiInstance.program.calculateGas.handle(
+      decodeAddress('5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF') ?? "0x00",
+      programIDFT,
+      {
+        Reward: {
+          tx_id: null,
+          to: decodeAddress(wallet),
+          amount: tokens,
+          transactions: {
+            to: decodeAddress(wallet),
+            amount: tokens,
+            kw: kw,
+          },
+        },
+      },
+      0,
+      false,
+      metadata
+    );
+
 
     const message = {
       destination: programIDFT,
@@ -36,7 +56,7 @@ const sendMessageContract = async (wallet, tokens, kw) => {
           },
         },
       },
-      gasLimit: gasCalculate,
+      gasLimit: gasToSpend(gas),
       value: 0,
     };
 
