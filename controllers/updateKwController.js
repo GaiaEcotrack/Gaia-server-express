@@ -98,7 +98,7 @@ async function actualizarKwGeneradoParaUsuarios() {
                     console.error(`No se pudo enviar el token ${i + 1} a Usuario ${user.name} después de varios intentos.`);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 3000)); // Espera adicional de 1 segundo entre cada token enviado
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Espera adicional de 1 segundo entre cada token enviado
             }
         }
 
@@ -107,6 +107,5 @@ async function actualizarKwGeneradoParaUsuarios() {
         console.error('Error al actualizar usuarios:', error.message);
     }
 }
-
 
 module.exports = { actualizarKwGeneradoParaUsuarios, updateKw };

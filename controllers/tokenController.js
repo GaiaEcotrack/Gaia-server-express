@@ -1,6 +1,7 @@
 const Generador = require('../models/generador');
 const { faker } = require('@faker-js/faker');
-const {GearApi , ProgramMetadata , GearKeyring ,GasInfo, decodeAddress,encodeAddress} = require('@gear-js/api')
+const {GearApi , ProgramMetadata , GearKeyring ,GasInfo, decodeAddress,encodeAddress} = require('@gear-js/api');
+const { reject } = require('async');
 
 
 
@@ -41,7 +42,6 @@ const sendMessageContract = async (wallet, tokens, kw) => {
       metadata
     );
 
-
     const message = {
       destination: programIDFT,
       payload: {
@@ -60,19 +60,25 @@ const sendMessageContract = async (wallet, tokens, kw) => {
       value: 0,
     };
 
-    // Reutilizar la instancia de GearApi creada previamente
     const transferExtrinsic = await gearApiInstance.message.send(message, metadata);
+    const {nonce} = await gearApiInstance.query.system.account("5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF")
 
     const mnemonic = 'sun pill sentence spoil ripple october funny ensure illness equal car demise';
     const { seed } = GearKeyring.generateSeed(mnemonic);
     const keyring = await GearKeyring.fromSeed(seed, 'admin');
 
-    await transferExtrinsic.signAndSend(keyring, (event) => {
-      try {
-        console.log("Successful transaction");
-      } catch (error) {
+    return new Promise((resolve, reject) => {
+      transferExtrinsic.signAndSend(keyring, {nonce: nonce}, ({ status }) => {
+        if (status.isInBlock) {
+          console.log("Transaction in the block");
+        } else if (status.isFinalized) {
+          console.log("Transaction completed");
+          resolve(true);
+        }
+      }).catch(error => {
         console.error("Error al manejar evento de transacción:", error);
-      }
+        reject(error);
+      });
     });
   } catch (error) {
     console.error("Error en sendMessageContract:", error);
