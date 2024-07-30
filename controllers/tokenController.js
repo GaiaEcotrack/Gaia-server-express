@@ -26,15 +26,11 @@ const sendMessageContract = async (wallet, tokens, kw) => {
       decodeAddress('5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF') ?? "0x00",
       programIDFT,
       {
-        Reward: {
+        GetRewards: {
           tx_id: null,
-          to: decodeAddress(wallet),
-          amount: tokens,
-          transactions: {
-            to: decodeAddress(wallet),
-            amount: tokens,
-            kw: kw,
-          },
+          to:decodeAddress(wallet),
+          tokens: Number(tokens),
+          password:"E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6"
         },
       },
       0,
@@ -45,20 +41,17 @@ const sendMessageContract = async (wallet, tokens, kw) => {
     const message = {
       destination: programIDFT,
       payload: {
-        Reward: {
+        GetRewards: {
           tx_id: null,
-          to: decodeAddress(wallet),
-          amount: tokens,
-          transactions: {
-            to: decodeAddress(wallet),
-            amount: tokens,
-            kw: kw,
-          },
+          to:decodeAddress(wallet),
+          tokens: Number(tokens),
+          password:"E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6"
         },
       },
       gasLimit: gasToSpend(gas),
       value: 0,
     };
+
 
     const transferExtrinsic = await gearApiInstance.message.send(message, metadata);
     const {nonce} = await gearApiInstance.query.system.account("5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF")
