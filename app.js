@@ -33,6 +33,7 @@ const apiRoutes = require('./routes/device');
 const generadorRoutes = require('./routes/generadorRoutes');
 const credencialsUser = require('./routes/credencialsRoutes');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Use routes
 app.use('/api', apiRoutes);
@@ -42,6 +43,7 @@ app.get("/api", (req, res) => {
 app.use('/generator', verifyToken, generadorRoutes);
 app.use('/credencials', verifyToken, credencialsUser);
 app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
 
 let isUpdating = false;
 
