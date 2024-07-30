@@ -4,5 +4,7 @@ const userController = require('../controllers/userController');
 
 
 router.get('/search', userController.getUserByEmail);
+router.get('/:user_id', userController.getUserById);
+router.get('/', userController.getUsers);
 
 module.exports = router;

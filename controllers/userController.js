@@ -45,3 +45,51 @@ exports.getUserByEmail = async (req, res) => {
     return res.status(500).json({ message: 'Error del servidor' });
   }
 };
+
+exports.getUserById = async (req, res) => {
+  const userId = req.params.user_id;
+
+  try {
+    const collection = await connectToDatabase();
+    const user = await collection.findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    user._id = user._id.toString();
+    if (user.devices && Array.isArray(user.devices)) {
+      user.devices = user.devices.map(device => ({
+        ...device,
+        _id: device._id.toString()
+      }));
+    }
+
+    return res.status(200).json({ message: 'Usuario encontrado', user: user });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
+exports.getUsers = async (req, res) => {
+  try {
+    const collection = await connectToDatabase();
+    const users = await collection.find().toArray();
+
+    users.forEach(user => {
+      user._id = user._id.toString();
+      if (user.devices && Array.isArray(user.devices)) {
+        user.devices = user.devices.map(device => ({
+          ...device,
+          _id: device._id.toString()
+        }));
+      }
+    });
+
+    return res.status(200).json({ message: 'Hello, Express and MongoDB Atlas!', users: users });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error del servidor' });
+  }
+};
