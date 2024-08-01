@@ -8,27 +8,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 // Conectarse una vez y reutilizar la conexión
 let db;
 const userSchema = Joi.object({
-  email: Joi.string().email().required(),
-  full_name: Joi.string().required(),
-  identification_number: Joi.string().required(),
-  address: Joi.string().required(),
-  phone: Joi.string().required(),
-  identity_document: Joi.string().required(),
-  bank_account_status: Joi.string().required(),
-  tax_declarations: Joi.string().required(),
-  other_financial_documents: Joi.string().required(),
-  device_brand: Joi.string().required(),
-  username: Joi.string().required(),
-  installation_company: Joi.string().required(),
-  devices: Joi.array().items(Joi.object()).required(),
-  membresia: Joi.boolean(),
-  verified_email: Joi.boolean(),
-  verified_sms: Joi.boolean(),
-  verified_2fa: Joi.boolean(),
-  photo_profile: Joi.string().required(),
-  location: Joi.string().required(),
-  role: Joi.string().required(),
-  wallet: Joi.object().required()
+  email: Joi.string().email().required()
 });
 
 async function connectToDatabase() {
@@ -121,7 +101,7 @@ exports.getUsers = async (req, res) => {
 exports.addUser = async (req, res) => {
   const data = req.body;
 
-  const { error } = userSchema.validate(data);
+  const { error } = userSchema.validate({ email: data.email });
 
   if (error) {
     return res.status(400).json({ message: 'Validation errors', errors: error.details });
