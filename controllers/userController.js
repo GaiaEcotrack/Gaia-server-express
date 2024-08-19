@@ -11,6 +11,12 @@ const userSchema = Joi.object({
   email: Joi.string().email().required()
 });
 
+const updateSchema = Joi.object({
+  userId: Joi.string().required(),
+  property: Joi.string().required(),
+  value: Joi.any().required(),
+});
+
 async function connectToDatabase() {
   if (!db) {
     await client.connect();
@@ -153,6 +159,39 @@ exports.addUser = async (req, res) => {
     const insertedId = result.insertedId;
 
     return res.status(201).json({ message: 'Usuario agregado con éxito', user_id: insertedId.toString() });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
+
+exports.updateUserProperty = async (req, res) => {
+  const { userId, property, value } = req.body;
+
+  // Validar los datos de entrada
+  const { error } = updateSchema.validate({ userId, property, value });
+  if (error) {
+    return res.status(400).json({ message: 'Errores de validación', errors: error.details });
+  }
+
+  try {
+    const collection = await connectToDatabase();
+
+    // Construir el campo de actualización dinámicamente
+    const updateField = { [property]: value };
+
+    // Realizar la actualización
+    const result = await collection.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: updateField }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    return res.status(200).json({ message: 'Propiedad actualizada con éxito' });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Error del servidor' });

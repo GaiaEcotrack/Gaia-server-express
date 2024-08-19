@@ -7,5 +7,6 @@ router.get('/search', userController.getUserByEmail);
 router.get('/:user_id', userController.getUserById);
 router.get('/', userController.getUsers);
 router.post('/', userController.addUser);
+router.put('/', userController.updateUserProperty);
 
 module.exports = router;
