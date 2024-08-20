@@ -31,9 +31,14 @@ Para comenzar con este proyecto, sigue estos pasos:
 Crea un archivo `.env` en la raíz del proyecto y define las variables de entorno necesarias. Un ejemplo de archivo `.env` podría ser:
 
 ```plaintext
-PORT=5000
+PORT=8080
 MONGO_URI="Pedir URL"
 API_HM='Pedir URL'
+API_HM=
+MAIN_CONTRACT_ID=
+MAIN_CONTRACT_METADATA=
+ADMIN_USER=
+ADMIN_PASSWORD=9
 
  ``` 
 ## Uso
