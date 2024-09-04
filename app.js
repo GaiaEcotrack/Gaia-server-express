@@ -34,6 +34,7 @@ const generadorRoutes = require('./routes/generadorRoutes');
 const credencialsUser = require('./routes/credencialsRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const userComercial = require('./routes/userComercialRoutes');
 
 // Use routes
 app.use('/api', apiRoutes);
@@ -44,6 +45,7 @@ app.use('/generator',verifyToken,generadorRoutes);
 app.use('/credencials', verifyToken, credencialsUser);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/comercial',userComercial)
 
 let isUpdating = false;
 

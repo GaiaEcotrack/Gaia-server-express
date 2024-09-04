@@ -51,6 +51,8 @@ const sendMessageContract = async (wallet, tokens, kw) => {
       gasLimit: gasToSpend(gas),
       value: 0,
     };
+    console.log(gasToSpend(gas));
+    
 
 
     const transferExtrinsic = await gearApiInstance.message.send(message, metadata);
