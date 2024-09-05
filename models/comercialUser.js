@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // Define el esquema del usuario
-const userSchema = new mongoose.Schema({
+const comercialSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
@@ -56,6 +56,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Crea el modelo basado en el esquema
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('Comercial', comercialSchema);
 
 module.exports = User;
