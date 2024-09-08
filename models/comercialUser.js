@@ -53,6 +53,11 @@ const comercialSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  role: {
+    type: String,
+    trim: true,
+  },
+
 });
 
 // Crea el modelo basado en el esquema

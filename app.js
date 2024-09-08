@@ -35,6 +35,7 @@ const credencialsUser = require('./routes/credencialsRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const userComercial = require('./routes/userComercialRoutes');
+const userInstaller = require('./routes/installerRoutes');
 
 // Use routes
 app.use('/api', apiRoutes);
@@ -46,6 +47,7 @@ app.use('/credencials', verifyToken, credencialsUser);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/comercial',userComercial)
+app.use('/installer',userInstaller)
 
 let isUpdating = false;
 
