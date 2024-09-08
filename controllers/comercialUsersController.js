@@ -16,6 +16,7 @@ exports.createUser = async (req, res) => {
       legal_representative_id: req.body.legal_representative_id,
       legal_representative_email: req.body.legal_representative_email,
       legal_representative_phone: req.body.legal_representative_phone,
+      role: req.body.role
     });
 
     await user.save();
