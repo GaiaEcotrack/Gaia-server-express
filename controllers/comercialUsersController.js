@@ -1,4 +1,4 @@
-const User = require('../models/comercialUser'); // Ajusta la ruta según tu estructura de archivos
+ const User = require('../models/comercialUser'); // Ajusta la ruta según tu estructura de archivos
 
 // Crear un nuevo usuario
 exports.createUser = async (req, res) => {
