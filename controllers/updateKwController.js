@@ -3,6 +3,8 @@ const moment = require('moment-timezone');
 const generador = require('../models/generador');
 const Credenciales = require('../models/credenciales');
 const sendContracMessage = require('./tokenController');
+const executeCommand = require('./sailsController')
+const {decodeAddress} = require('@gear-js/api');
 
 const updateKw = async (username) => {
     try {
@@ -66,6 +68,7 @@ const updateKw = async (username) => {
 async function actualizarKwGeneradoParaUsuarios() {
     try {
         const users = await generador.find();
+        await executeCommand.initializeConnection()
 
         for (let user of users) {
             let kwGeneradoHoy = await updateKw(user.secret_name);
@@ -84,7 +87,9 @@ async function actualizarKwGeneradoParaUsuarios() {
 
                 while (!tokenEnviado && intentos < 3) { // Intentar hasta 3 veces antes de seguir con el siguiente token
                     try {
-                        await sendContracMessage.sendMessageContract(user.wallet, 1, 1);
+                        // await sendContracMessage.sendMessageContract(user.wallet, 1, 1);
+                        const wallet = decodeAddress(user.wallet)
+                        await executeCommand.executeCommand("MiniDeXs","MintTokensToUser",[wallet, 1])
                         tokenEnviado = true;
                         console.log(`Token ${i + 1} enviado a Usuario ${user.name}`);
                     } catch (error) {
