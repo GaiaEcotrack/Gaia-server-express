@@ -89,7 +89,7 @@ async function actualizarKwGeneradoParaUsuarios() {
                     try {
                         // await sendContracMessage.sendMessageContract(user.wallet, 1, 1);
                         const wallet = decodeAddress(user.wallet)
-                        await executeCommand.executeCommand("MiniDeXs","MintTokensToUser",[wallet, 1])
+                        await executeCommand.executeCommand("GaiaService","MintTokensToUser",[wallet, 1])
                         tokenEnviado = true;
                         console.log(`Token ${i + 1} enviado a Usuario ${user.name}`);
                     } catch (error) {
