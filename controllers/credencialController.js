@@ -3,10 +3,10 @@
 const credenciales = require('../models/credenciales');
 
 const addUser = async (req, res) => {
-  const { username, user_client, password } = req.body;
+  const { username, user_client, password,brand } = req.body;
 
   try {
-    const newCredencial = new credenciales({ username, user_client, password });
+    const newCredencial = new credenciales({ username, user_client, password,brand });
     await newCredencial.save();
 
     res.status(201).send('Usuario agregado correctamente');

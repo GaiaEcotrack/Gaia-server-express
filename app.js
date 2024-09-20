@@ -47,7 +47,7 @@ app.get("/api", (req, res) => {
     res.send("App running 👍");
 });
 app.use('/generator',verifyToken,generadorRoutes);
-app.use('/credencials', verifyToken, credencialsUser);
+app.use('/credencials', credencialsUser);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/comercial',userComercial)
