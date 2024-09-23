@@ -5,7 +5,7 @@ const { getDevicesByPlantList, getCarboonPlantData, getMAXDayChart,getAllPlants 
 // Envolver axios con soporte para cookies
 
 
-
+//Obtenemos las plantas del usuario
  exports.getPlantListTitle = async (req, res) => {
   const {user_client} = req.body
   try {
@@ -21,7 +21,7 @@ const { getDevicesByPlantList, getCarboonPlantData, getMAXDayChart,getAllPlants 
 };
 
 
-
+//combinamos la informacion mas relevantes de los dispositivos pasandole por body la credencial del usuario
 exports.combinedPlantDataController = async (req, res) => {
   const  {user_client}  = req.body;
 
@@ -41,7 +41,7 @@ exports.combinedPlantDataController = async (req, res) => {
       maxDayChart,
     };
 
-    res.status(200).json(combinedResponse);
+    res.status(200).json({data:combinedResponse});
   } catch (error) {
     console.error('Error en la combinación de datos:', error.message);
     res.status(500).json({ message: 'Error al obtener los datos combinados' });

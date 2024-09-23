@@ -120,6 +120,7 @@ const getAllPlants = async (user_client) => {
 const getDevicesByPlantList = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
+  
 
   // Filtrar la planta cuyo nombre coincida con user_client, sin importar mayúsculas/minúsculas
   const plant = requestId.find(plant => 

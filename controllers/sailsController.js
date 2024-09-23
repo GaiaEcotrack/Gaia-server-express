@@ -160,7 +160,7 @@ const executeQuery = async (req,res) => {
         res.status(200).send(response)
     } catch (e) {
         console.error('Error while reading state:', e);
-        res.status(400).send(response)
+        res.status(400).send(e)
     }
 };
 
