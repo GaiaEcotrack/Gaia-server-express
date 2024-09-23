@@ -1,5 +1,5 @@
 // controllers/growattController.js
-const { getDevicesByPlantList, getCarboonPlantData, getMAXDayChart,getAllPlants } = require('../helpers/growatt');
+const { getDevicesByPlantList, getCarboonPlantData, getMAXDayChart,getAllPlants, getDataLog } = require('../helpers/growatt');
 
 
 // Envolver axios con soporte para cookies
@@ -33,12 +33,14 @@ exports.combinedPlantDataController = async (req, res) => {
     const devices = await getDevicesByPlantList(user_client);
     const plantData = await getCarboonPlantData(user_client);
     const maxDayChart = await getMAXDayChart(user_client);
+    const deviceLogs = await getDataLog(user_client)
 
     // Combinar las respuestas
     const combinedResponse = {
       devices,
       plantData,
       maxDayChart,
+      deviceLogs
     };
 
     res.status(200).json({data:combinedResponse});
