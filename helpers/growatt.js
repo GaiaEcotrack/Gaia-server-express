@@ -54,14 +54,37 @@ const auth = async (username,password) => {
 
 
 const getAuthCookies = async (user_client) => {
-  const credencials = await Credenciales.findOne({ user_client: { $regex: new RegExp(`^${user_client}$`, 'i') } });
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escapa caracteres especiales
+  }
   
-  if (!credencials) {
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escapa caracteres especiales
+  }
+  
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '');
+  
+  // Crear la expresión regular para la búsqueda
+  const regex = new RegExp(`^${escapeRegExp(cleanedUserClient)}$`, 'i');
+  
+  // Buscar las credenciales en la base de datos
+  const credencials = await Credenciales.find(); // Busca todas las credenciales
+  
+  // Filtrar las credenciales para comparar sin espacios
+  const filteredCredencials = credencials.filter(credencial => {
+    return credencial.user_client.replace(/\s+/g, '').match(regex);
+  });
+  
+  // Si necesitas solo la primera coincidencia
+  const matchedCredential = filteredCredencials.length > 0 ? filteredCredencials[0] : null;
+  
+  if (!matchedCredential) {
     throw new Error('Credenciales no encontradas');
   }
 
-  const username = credencials.username;
-  const password = credencials.password;
+  const username = matchedCredential.username;
+  const password = matchedCredential.password;
   const cookies = await auth(username, password);
   return cookies.cookies;
 };
@@ -109,25 +132,30 @@ const getAllPlants = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const config = {
     method: 'post',
-    url: 'https://openapi.growatt.com/index/getPlantListTitle',
+    url: 'https://openapi.growatt.com/selectPlant/getPlantList',
     headers: {
       'Accept': 'application/json, text/javascript, */*; q=0.01',
       'Accept-Encoding': 'gzip, deflate, br, zstd',
       'Accept-Language': 'es-419,es-US;q=0.9,es;q=0.8,en;q=0.7',
       'Connection': 'keep-alive',
-      'Content-Length': '0',
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       'Origin': 'https://openapi.growatt.com',
       'Referer': 'https://openapi.growatt.com/selectPlant',
       'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
       'X-Requested-With': 'XMLHttpRequest',
       'Cookie': cookies,
     },
+    data: {
+      currPage: 1,
+      plantType: -1,
+      orderType: 2,
+      plantName: ""
+    }
   };
 
   try {
     const response = await axios(config);
-    const plantList = response.data;
+    const plantList = response.data.datas;
     
     // Guardar en caché
     plantCache[user_client] = {
@@ -145,11 +173,13 @@ const getAllPlants = async (user_client) => {
 const getDevicesByPlantList = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
-  
 
-  // Filtrar la planta cuyo nombre coincida con user_client, sin importar mayúsculas/minúsculas
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
+
+  // Filtrar la planta cuyo nombre coincida con user_client, ignorando espacios y mayúsculas/minúsculas
   const plant = requestId.find(plant => 
-    plant.plantName.toLowerCase() === user_client.toLowerCase()
+    plant.plantName.replace(/\s+/g, '').toLowerCase() === cleanedUserClient
   );
 
   if (!plant) {
@@ -160,7 +190,6 @@ const getDevicesByPlantList = async (user_client) => {
   const plantId = plant.id;
 
   const url = 'https://openapi.growatt.com/panel/getDevicesByPlantList';
-
   const headers = createHeaders(cookies);
   const payload = new URLSearchParams({
     currPage: "1",
@@ -177,9 +206,12 @@ const getCarboonPlantData = async (user_client) => {
 
   const requestId = await getAllPlants(user_client);
 
-  // Filtrar la planta cuyo nombre coincida con user_client, sin importar mayúsculas/minúsculas
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
+
+  // Filtrar la planta cuyo nombre coincida con user_client, ignorando espacios y mayúsculas/minúsculas
   const plant = requestId.find(plant => 
-    plant.plantName.toLowerCase() === user_client.toLowerCase()
+    plant.plantName.replace(/\s+/g, '').toLowerCase() === cleanedUserClient
   );
 
   if (!plant) {
@@ -200,9 +232,12 @@ const getMAXDayChart = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
 
-  // Filtrar la planta cuyo nombre coincida con user_client, sin importar mayúsculas/minúsculas
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
+
+  // Filtrar la planta cuyo nombre coincida con user_client, ignorando espacios y mayúsculas/minúsculas
   const plant = requestId.find(plant => 
-    plant.plantName.toLowerCase() === user_client.toLowerCase()
+    plant.plantName.replace(/\s+/g, '').toLowerCase() === cleanedUserClient
   );
 
   if (!plant) {
@@ -213,12 +248,13 @@ const getMAXDayChart = async (user_client) => {
   const plantId = plant.id;
   const baseUrl = 'https://openapi.growatt.com/panel/max/getMAXDayChart';
 
-  if ( !plantId) {
+  if (!plantId) {
     throw new Error('Date y Plant ID son requeridos');
   }
+  
   const today = new Date().toISOString().split('T')[0];
   const headers = createHeaders(cookies);
-  const data = await makePostRequest(baseUrl, { date:today, plantId }, headers);
+  const data = await makePostRequest(baseUrl, { date: today, plantId }, headers);
   return data;
 };
 
@@ -226,9 +262,12 @@ const getDataLog = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
 
-  // Filtrar la planta cuyo nombre coincida con user_client, sin importar mayúsculas/minúsculas
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
+
+  // Filtrar la planta cuyo nombre coincida con user_client, ignorando espacios y mayúsculas/minúsculas
   const plant = requestId.find(plant => 
-    plant.plantName.toLowerCase() === user_client.toLowerCase()
+    plant.plantName.replace(/\s+/g, '').toLowerCase() === cleanedUserClient
   );
 
   if (!plant) {
@@ -237,17 +276,17 @@ const getDataLog = async (user_client) => {
 
   // Usar el id de la planta encontrada como plantId
   const plantId = plant.id;
-  const baseUrl = 'https://openapi.growatt.com/device/getDatalogList'
+  const baseUrl = 'https://openapi.growatt.com/device/getDatalogList';
 
-  if ( !plantId) {
+  if (!plantId) {
     throw new Error('Date y Plant ID son requeridos');
   }
+  
   const today = new Date().toISOString().split('T')[0];
   const headers = createHeaders(cookies);
-  const data = await makePostRequest(baseUrl, { datalogSn:"",currPage:1, plantId }, headers);
+  const data = await makePostRequest(baseUrl, { datalogSn: "", currPage: 1, plantId }, headers);
   return data;
 };
-
 
 
 // Exportar las funciones para su uso en otros lugares
