@@ -7,7 +7,8 @@ const generadorSchema = new mongoose.Schema({
   secret_name:String,
   wallet:String,
   installation_company:String,
-  tokenised_today:{type : Boolean,default:false}
+  tokenised_today:{type : Boolean,default:false},
+  brand:{ type: String, required: true }
 });
 
 const Generador = mongoose.model('Generador', generadorSchema);

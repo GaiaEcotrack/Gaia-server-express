@@ -5,6 +5,7 @@ const Credenciales = require('../models/credenciales');
 const sendContracMessage = require('./tokenController');
 const executeCommand = require('./sailsController')
 const {decodeAddress} = require('@gear-js/api');
+const { getDevicesByPlantList } = require('../helpers/growatt');
 
 const updateKw = async (username) => {
     try {
@@ -68,28 +69,43 @@ const updateKw = async (username) => {
 async function actualizarKwGeneradoParaUsuarios() {
     try {
         const users = await generador.find();
-        await executeCommand.initializeConnection()
+        await executeCommand.initializeConnection();
 
         for (let user of users) {
-            let kwGeneradoHoy = await updateKw(user.secret_name);
-            kwGeneradoHoy = parseInt(kwGeneradoHoy);
-            user.generatedKW += kwGeneradoHoy;
+            let kwGenerado = 0;
+            let tokens = 0;
 
-            const tokens = Math.floor(kwGeneradoHoy / 1000);
-            user.tokens += tokens;
+            if (user.brand === "Hoymiles") {
+                let kwGeneradoHoymiles = await updateKw(user.secret_name);
+                kwGenerado = parseInt(kwGeneradoHoymiles);
+                user.generatedKW += kwGenerado;
 
-            await user.save();
-            console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
+                tokens = Math.floor(kwGenerado / 1000); // 1 token por cada 1000kW
+                user.tokens += tokens;
 
+                await user.save();
+                console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
+            } else if (user.brand === "Growatt") {
+                let kwGeneradoGrowatt = await getDevicesByPlantList(user.secret_name);
+                kwGenerado = parseInt(kwGeneradoGrowatt[0].eToday);
+                user.generatedKW += kwGenerado;
+
+                tokens = kwGenerado; // En el caso de Growatt, se envían los kW directamente como tokens
+                user.tokens += tokens;
+
+                await user.save();
+                console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
+            }
+
+            // Enviar tokens al usuario
             for (let i = 0; i < tokens; i++) {
                 let tokenEnviado = false;
                 let intentos = 0;
 
                 while (!tokenEnviado && intentos < 3) { // Intentar hasta 3 veces antes de seguir con el siguiente token
                     try {
-                        // await sendContracMessage.sendMessageContract(user.wallet, 1, 1);
-                        const wallet = decodeAddress(user.wallet)
-                        await executeCommand.executeCommand("GaiaService","MintTokensToUser",[wallet, 1])
+                        const wallet = decodeAddress(user.wallet);
+                        await executeCommand.executeCommand("GaiaService", "MintTokensToUser", [wallet, 1]);
                         tokenEnviado = true;
                         console.log(`Token ${i + 1} enviado a Usuario ${user.name}`);
                     } catch (error) {

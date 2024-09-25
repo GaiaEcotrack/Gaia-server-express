@@ -129,10 +129,10 @@ const getAllUsers = async (req, res) => {
 
 // Controlador para agregar un nuevo usuario
 const addUser = async (req, res) => {
-  const { name , wallet , secret_name,installation_company } = req.body;
+  const { name , wallet , secret_name,installation_company,brand } = req.body;
 
   try {
-    const newGenerador = new Generador({ name,wallet,secret_name,installation_company });
+    const newGenerador = new Generador({ name,wallet,secret_name,installation_company,brand });
     await newGenerador.save();
 
     res.status(201).send('Usuario agregado correctamente');
@@ -232,6 +232,7 @@ const createUsers = async (req, res) => {
   const company = ["Fibra_Andina","Green_House","Proselec","Fullenergysolar"]
   const secretNames = ["Monitoreo_3", "Monitoreo_2", "Monitoreo_Hoymiles"];
   const wallets =["5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF","5CwBHsfFRpSwA4zFgJC7RDdAZXckqSiHS8PQtYQ81SBjCWeS","5FWNZQuDEbLSgT9KKzbQjFiiLhyxWfDAyusFvd7tshWKbo1U","5HTJkawMqHSvVRi2XrE7vdTU4t5Vq1EDv2ZDeWSwNxmmQKEK","5G8mzxiCCW4VALGRGdaqGPfrMLp7CeaVfk5XwPhDDaDyGEgE"]
+  const brand = ["Hoymiles","Growatt"]
 
   for (let i = 0; i < 100; i++) {
     users.push({
