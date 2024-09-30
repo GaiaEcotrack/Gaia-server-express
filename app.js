@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const updateFunctions = require('./controllers/updateKwController');
 const executeCommand = require('./controllers/sailsController')
 const sendContracMessage = require('./controllers/tokenController');
@@ -20,6 +21,14 @@ const app = express();
 app.use(express.json());
 // app.use(morgan('combined'));
 app.use(morgan('tiny'));
+
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // máximo 100 peticiones por IP
+});
+
+app.use(limiter);
 
 const corsOptions = {
     origin: '*',
