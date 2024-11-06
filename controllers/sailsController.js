@@ -4,7 +4,7 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0xed711dc0106be9afd1501018c9fbae2d02cc34b661a6970ad32862e9e168ad51';
+const contractId = '0xa94c6380c2e68b2b844b5fc84ff8564456f6dc5701ad073164ae2a128e3c13a6';
 const idl = `type MiniDexsEvents = enum {
   RefundOfVaras: u128,
   VFTContractIdSet,
@@ -16,11 +16,13 @@ const idl = `type MiniDexsEvents = enum {
   MintingExecuted,
   TotalSwapInVaras: u128,
   TokensSwapSuccessfully: struct { total_tokens: u128, total_varas: u128 },
+  AdminAdded: actor_id,
   Error: MiniDexsErrors,
 };
 
 type MiniDexsErrors = enum {
   MinTokensToAdd: u128,
+  AdminExist,
   UserAlreadyExists,
   CantSwapTokens: struct { tokens_in_vft_contract: u256 },
   CantSwapUserTokens: struct { user_tokens: u256, tokens_to_swap: u256 },
@@ -32,6 +34,15 @@ type MiniDexsErrors = enum {
   ErrorInGetNumOfVarasToSwap,
   OperationWasNotPerformed,
   MintingFailed,
+  InvalidAmount,
+  InvalidSerialNumber,
+  InvalidLocation,
+  InvalidTypeDevice,
+  InvalidDeviceBrand,
+  ExternalCallTimeout,
+  ArithmeticOverflow,
+  InvalidDeviceType,
+  DeviceAlreadyExists,
 };
 
 type MiniDexsQueryEvents = enum {
@@ -69,6 +80,7 @@ constructor {
 };
 
 service GaiaService {
+  AddAdmin : (new_admin: actor_id) -> MiniDexsEvents;
   AddCompanyToken : (tokens_to_add: u128) -> MiniDexsEvents;
   AddDevice : (owner: actor_id, serial_number: str, location: str, type_device: str, device_brand: str) -> MiniDexsEvents;
   AddTokensToContract : (tokens_to_add: u128) -> MiniDexsEvents;
@@ -80,19 +92,19 @@ service GaiaService {
   SetVftContractId : (vft_contract_id: actor_id) -> MiniDexsEvents;
   SwapTokensByNumOfVaras : () -> MiniDexsEvents;
   SwapTokensToVaras : (amount_of_tokens: u128) -> MiniDexsEvents;
-  TransferFromTokensCompany : (from: actor_id, to: actor_id, amount: u128) -> MiniDexsEvents;
-  TransferFromTokensEnergy : (from: actor_id, to: actor_id, amount: u128) -> MiniDexsEvents;
   TransferTokensCompany : (recipient: actor_id, amount: u128) -> MiniDexsEvents;
   TransferTokensToUser : (recipient: actor_id, amount: u128) -> MiniDexsEvents;
   query ContractTotalVarasStored : () -> MiniDexsQueryEvents;
   query GetDevices : () -> MiniDexsQueryEvents;
   query GetMitings : () -> MiniDexsQueryEvents;
+  query IsAdmin : (caller: actor_id) -> bool;
   query TokensToSwapOneVara : () -> MiniDexsQueryEvents;
   query TotalTokensCompany : (wallet: actor_id) -> MiniDexsQueryEvents;
   query TotalTokensEnergy : (wallet: actor_id) -> MiniDexsQueryEvents;
   query TotalTokensToSwap : () -> MiniDexsQueryEvents;
   query TotalTokensToSwapAsU128 : () -> MiniDexsQueryEvents;
 };
+
 
 
 `;
