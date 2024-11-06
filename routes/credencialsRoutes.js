@@ -6,5 +6,6 @@ const credentialsController = require('../controllers/credencialController');
 router.post('/', credentialsController.addUser);
 router.get('/', credentialsController.getAllUsers);
 router.delete('/:id', credentialsController.deleteUser);
+router.put('/update', credentialsController.updatePasswords);
 
 module.exports = router;
