@@ -17,6 +17,9 @@ dotenv.config();
 
 const app = express();
 
+// Configurar trust proxy
+app.set('trust proxy', true); // <----- Esta línea es nueva
+
 // Middleware to parse JSON
 app.use(express.json());
 // app.use(morgan('combined'));
