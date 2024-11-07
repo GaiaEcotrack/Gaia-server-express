@@ -18,7 +18,7 @@ dotenv.config();
 const app = express();
 
 // Configurar trust proxy
-app.set('trust proxy', true); // <----- Esta línea es nueva
+app.set('trust proxy', true); 
 
 // Middleware to parse JSON
 app.use(express.json());
@@ -29,8 +29,8 @@ app.use(morgan('tiny'));
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // máximo 100 peticiones por IP
+    keyGenerator: (req) => req.ip, // Utiliza la IP real obtenida a través del proxy
 });
-
 app.use(limiter);
 
 const corsOptions = {
