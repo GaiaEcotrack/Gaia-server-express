@@ -52,6 +52,7 @@ const userRoutes = require('./routes/userRoutes');
 const userComercial = require('./routes/userComercialRoutes');
 const userInstaller = require('./routes/installerRoutes');
 const salisRoute = require('./routes/salisRoutes');
+const kycRoute = require('./routes/sendEmailRoute')
 const { getDevicesByPlantList } = require('./helpers/growatt');
 
 // Use routes
@@ -66,6 +67,7 @@ app.use('/users', userRoutes);
 app.use('/comercial',userComercial)
 app.use('/installer',userInstaller)
 app.use('/service',salisRoute)
+app.use('/kyc',kycRoute)
 
 let isUpdating = false;
 
