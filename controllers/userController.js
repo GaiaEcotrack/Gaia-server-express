@@ -56,6 +56,29 @@ exports.getUserByEmail = async (req, res) => {
   }
 };
 
+
+exports.deleteUserById = async (req, res) => {
+  const userId = req.params.user_id;
+
+  if (!ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'ID de usuario no válido' });
+  }
+
+  try {
+    const collection = await connectToDatabase();
+    const result = await collection.deleteOne({ _id: new ObjectId(userId) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    return res.status(200).json({ message: 'Usuario eliminado exitosamente' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
 exports.getUserById = async (req, res) => {
   const userId = req.params.user_id;
 
@@ -164,6 +187,7 @@ exports.addUser = async (req, res) => {
     return res.status(500).json({ message: 'Error del servidor' });
   }
 };
+
 
 
 exports.updateUserProperty = async (req, res) => {

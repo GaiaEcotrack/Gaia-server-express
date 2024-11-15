@@ -4,23 +4,27 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0xa94c6380c2e68b2b844b5fc84ff8564456f6dc5701ad073164ae2a128e3c13a6';
-const idl = `type MiniDexsEvents = enum {
+const contractId = '0x7046ff62095646be9b8cdd81b4dec03e7b38a976fb58323af92733f5b61d1594';
+const idl = `type GaiaEvents = enum {
   RefundOfVaras: u128,
   VFTContractIdSet,
   DevicesAdded: str,
   MinTokensToAddSet,
   TokensAdded,
+  TokensBurned,
   SetTokensPerVaras,
   MintingScheduled: str,
   MintingExecuted,
   TotalSwapInVaras: u128,
   TokensSwapSuccessfully: struct { total_tokens: u128, total_varas: u128 },
   AdminAdded: actor_id,
-  Error: MiniDexsErrors,
+  Error: GaiaErrors,
+  TransferSuccessful: struct { from: actor_id, to: actor_id, amount: u128, timestamp: u64 },
+  TotalSupplyRetrieved: u256,
+  PropertyChanged: struct { str, u256 },
 };
 
-type MiniDexsErrors = enum {
+type GaiaErrors = enum {
   MinTokensToAdd: u128,
   AdminExist,
   UserAlreadyExists,
@@ -43,9 +47,17 @@ type MiniDexsErrors = enum {
   ArithmeticOverflow,
   InvalidDeviceType,
   DeviceAlreadyExists,
+  InsufficientBalance,
+  InvalidTransferAmount,
+  CalculationOverflow,
+  InvalidTimeRange,
+  CooldownPeriodActive,
+  ConversionLimitExceeded,
+  InvalidPropertyName,
+  InvalidConversionCooldown,
 };
 
-type MiniDexsQueryEvents = enum {
+type GaiaQueryEvents = enum {
   ContractBalanceInVaras: u128,
   Mitings: vec MintingSchedule,
   Devices: vec Devices,
@@ -57,7 +69,9 @@ type MiniDexsQueryEvents = enum {
   TotalTokensToSwapAsU128: u128,
   TokensToSwapOneVara: u128,
   NumOfTokensForOneVara: u128,
-  Error: MiniDexsErrors,
+  Error: GaiaErrors,
+  Producers: vec EnergyProduction,
+  PropertiesFetched: GaiaProperties,
 };
 
 type MintingSchedule = struct {
@@ -74,36 +88,63 @@ type Devices = struct {
   device_brand: str,
 };
 
+type EnergyProduction = struct {
+  timestamp: u64,
+  kwh_generated: u256,
+  gaia_e_minted: u256,
+  producer: actor_id,
+};
+
+type GaiaProperties = struct {
+  kwh_per_token: u256,
+  gaia_e_to_gaia_rate: u256,
+  min_conversion_amount: u256,
+  max_daily_conversion: u256,
+  min_gaia_e_transfer: u256,
+  max_gaia_e_per_kwh: u256,
+  conversion_cooldown: u64,
+};
+
 constructor {
   New : ();
-  NewWithData : (vft_contract_id: opt actor_id, gaia_company_token: opt actor_id, min_tokens_to_add: u128, tokens_per_vara: u128);
+  NewWithData : (vft_contract_id: opt actor_id, gaia_company_token: opt actor_id, min_tokens_to_add: u128, tokens_per_vara: u128, gaia_e_to_gaia_rate: u256, min_conversion_amount: u256, max_daily_conversion: u256, min_gaia_e_transfer: u256, max_gaia_e_per_kwh: u256, kwh_por_token: u256, conversion_cooldown: u64);
 };
 
 service GaiaService {
-  AddAdmin : (new_admin: actor_id) -> MiniDexsEvents;
-  AddCompanyToken : (tokens_to_add: u128) -> MiniDexsEvents;
-  AddDevice : (owner: actor_id, serial_number: str, location: str, type_device: str, device_brand: str) -> MiniDexsEvents;
-  AddTokensToContract : (tokens_to_add: u128) -> MiniDexsEvents;
-  ExecuteMintings : (time: u64) -> MiniDexsEvents;
-  MintTokensToUser : (recipient: actor_id, amount: u128) -> MiniDexsEvents;
-  ScheduleMinting : (wallet: actor_id, amount: u128, minting_time: u64) -> MiniDexsEvents;
-  SetMinTokensToAdd : (min_tokens_to_add: u128) -> MiniDexsEvents;
-  SetTokensPerVara : (tokens_per_vara: u128) -> MiniDexsEvents;
-  SetVftContractId : (vft_contract_id: actor_id) -> MiniDexsEvents;
-  SwapTokensByNumOfVaras : () -> MiniDexsEvents;
-  SwapTokensToVaras : (amount_of_tokens: u128) -> MiniDexsEvents;
-  TransferTokensCompany : (recipient: actor_id, amount: u128) -> MiniDexsEvents;
-  TransferTokensToUser : (recipient: actor_id, amount: u128) -> MiniDexsEvents;
-  query ContractTotalVarasStored : () -> MiniDexsQueryEvents;
-  query GetDevices : () -> MiniDexsQueryEvents;
-  query GetMitings : () -> MiniDexsQueryEvents;
+  AddAdmin : (new_admin: actor_id) -> GaiaEvents;
+  AddCompanyToken : (tokens_to_add: u128) -> GaiaEvents;
+  AddDevice : (owner: actor_id, serial_number: str, location: str, type_device: str, device_brand: str) -> GaiaEvents;
+  AddTokensToContract : (tokens_to_add: u128) -> GaiaEvents;
+  ChangeCooldown : (conversion_cooldown: u64) -> GaiaEvents;
+  ChangeProperty : (property: str, value: u256) -> GaiaEvents;
+  ConvertGaiaEToGaia : (from: actor_id, amount: u256) -> GaiaEvents;
+  ExecuteMintings : (time: u64) -> GaiaEvents;
+  MintTokensToUser : (recipient: actor_id, amount: u256) -> GaiaEvents;
+  ScheduleMinting : (wallet: actor_id, amount: u128, minting_time: u64) -> GaiaEvents;
+  SetMinTokensToAdd : (min_tokens_to_add: u128) -> GaiaEvents;
+  SetTokensPerVara : (tokens_per_vara: u128) -> GaiaEvents;
+  SetVftContractId : (vft_contract_id: actor_id) -> GaiaEvents;
+  SwapTokensByNumOfVaras : () -> GaiaEvents;
+  SwapTokensToVaras : (amount_of_tokens: u128) -> GaiaEvents;
+  TransferTokensBetweenUsers : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
+  TransferTokensCompany : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
+  query ContractTotalVarasStored : () -> GaiaQueryEvents;
+  query GetAllProperties : () -> GaiaQueryEvents;
+  query GetDevices : () -> GaiaQueryEvents;
+  query GetEnergyProductionStats : (producer: actor_id, start_time: u64, end_time: u64) -> result (struct { u256, u256 }, GaiaErrors);
+  query GetMitings : () -> GaiaQueryEvents;
+  query GetProducers : () -> GaiaQueryEvents;
+  query GetTotalSupplyGaiaCompany : () -> GaiaEvents;
+  query GetTotalSupplyGaiaE : () -> GaiaEvents;
   query IsAdmin : (caller: actor_id) -> bool;
-  query TokensToSwapOneVara : () -> MiniDexsQueryEvents;
-  query TotalTokensCompany : (wallet: actor_id) -> MiniDexsQueryEvents;
-  query TotalTokensEnergy : (wallet: actor_id) -> MiniDexsQueryEvents;
-  query TotalTokensToSwap : () -> MiniDexsQueryEvents;
-  query TotalTokensToSwapAsU128 : () -> MiniDexsQueryEvents;
+  query TokensToSwapOneVara : () -> GaiaQueryEvents;
+  query TotalTokensCompany : (wallet: actor_id) -> GaiaQueryEvents;
+  query TotalTokensEnergy : (wallet: actor_id) -> GaiaQueryEvents;
+  query TotalTokensToSwap : () -> GaiaQueryEvents;
+  query TotalTokensToSwapAsU128 : () -> GaiaQueryEvents;
 };
+
+
 
 
 
