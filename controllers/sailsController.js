@@ -4,10 +4,12 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0x7046ff62095646be9b8cdd81b4dec03e7b38a976fb58323af92733f5b61d1594';
+const contractId = '0xe3585bc58f62c52fe2eb85eb4d787a6d460e88daf25126bd4ca293b4a29be908';
 const idl = `type GaiaEvents = enum {
+  VFTContractIdChanged: struct { old: opt actor_id, new: opt actor_id },
   RefundOfVaras: u128,
   VFTContractIdSet,
+  AdminRemoved: actor_id,
   DevicesAdded: str,
   MinTokensToAddSet,
   TokensAdded,
@@ -22,6 +24,7 @@ const idl = `type GaiaEvents = enum {
   TransferSuccessful: struct { from: actor_id, to: actor_id, amount: u128, timestamp: u64 },
   TotalSupplyRetrieved: u256,
   PropertyChanged: struct { str, u256 },
+  CooldownChanged: struct { old_value: u64, new_value: u64 },
 };
 
 type GaiaErrors = enum {
@@ -53,8 +56,32 @@ type GaiaErrors = enum {
   InvalidTimeRange,
   CooldownPeriodActive,
   ConversionLimitExceeded,
-  InvalidPropertyName,
   InvalidConversionCooldown,
+  InvalidCooldownValue: u64,
+  InvalidPropertyName: str,
+  InvalidPropertyValue: struct { str, u256 },
+  AdminListExceeded,
+  DeviceListExceeded,
+  MintingSchedulesExceeded,
+  InvalidMintAmount,
+  EnergyProductionLimitExceeded,
+  TimeRangeTooLarge,
+  InvalidTokenValue,
+  TooManyEntriesProcessed,
+  OnlyOwnerOrAdminCanDoThatAction,
+  InvalidContractId,
+  VftContractBurnFailed,
+  AmountExceedsLimit,
+  GaiaAmountTooLarge,
+  InvalidPercentageBase,
+  InvalidMintingTime: str,
+  ExceededTokenLimit: u128,
+  SelfTransferAttempted,
+  ExceededTransferLimit: u128,
+  TransferCooldownActive,
+  ExceededConversionLimit,
+  ExceededMintingLimit,
+  AdminNotFound,
 };
 
 type GaiaQueryEvents = enum {
@@ -120,10 +147,11 @@ service GaiaService {
   ConvertGaiaEToGaia : (from: actor_id, amount: u256) -> GaiaEvents;
   ExecuteMintings : (time: u64) -> GaiaEvents;
   MintTokensToUser : (recipient: actor_id, amount: u256) -> GaiaEvents;
+  RemoveAdmin : (admin_to_remove: actor_id) -> GaiaEvents;
   ScheduleMinting : (wallet: actor_id, amount: u128, minting_time: u64) -> GaiaEvents;
   SetMinTokensToAdd : (min_tokens_to_add: u128) -> GaiaEvents;
   SetTokensPerVara : (tokens_per_vara: u128) -> GaiaEvents;
-  SetVftContractId : (vft_contract_id: actor_id) -> GaiaEvents;
+  SetVftContractId : (new_vft_contract_id: actor_id) -> GaiaEvents;
   SwapTokensByNumOfVaras : () -> GaiaEvents;
   SwapTokensToVaras : (amount_of_tokens: u128) -> GaiaEvents;
   TransferTokensBetweenUsers : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
@@ -136,15 +164,13 @@ service GaiaService {
   query GetProducers : () -> GaiaQueryEvents;
   query GetTotalSupplyGaiaCompany : () -> GaiaEvents;
   query GetTotalSupplyGaiaE : () -> GaiaEvents;
-  query IsAdmin : (caller: actor_id) -> bool;
+  query IsAdmin : () -> bool;
   query TokensToSwapOneVara : () -> GaiaQueryEvents;
   query TotalTokensCompany : (wallet: actor_id) -> GaiaQueryEvents;
   query TotalTokensEnergy : (wallet: actor_id) -> GaiaQueryEvents;
   query TotalTokensToSwap : () -> GaiaQueryEvents;
   query TotalTokensToSwapAsU128 : () -> GaiaQueryEvents;
 };
-
-
 
 
 
