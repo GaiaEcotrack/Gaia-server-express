@@ -8,6 +8,8 @@ router.post('/', usuarioController.crearUsuario);
 // Obtener todos los usuarios
 router.get('/', usuarioController.obtenerUsuarios);
 
+router.get('/update', usuarioController.updateUsers);
+
 // Obtener un usuario por ID
 router.get('/:id', usuarioController.obtenerUsuarioPorId);
 

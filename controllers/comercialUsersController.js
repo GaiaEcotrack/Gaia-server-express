@@ -1,4 +1,5 @@
 const User = require('../models/comercialUser'); // Ajusta la ruta según tu estructura de archivos
+const installer = require('../models/InstallerUser'); // Ajusta la ruta según tu estructura de archivos
 
 // Crear un nuevo usuario
 exports.createUser = async (req, res) => {
@@ -36,16 +37,31 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Obtener un usuario por ID
-exports.getUserById = async (req, res) => {
+// Obtener un usuario por ASOCIADO
+exports.getUserByPartner = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const { partnerName } = req.params;
+
+    // Normaliza el texto ingresado eliminando espacios y convirtiéndolo a minúsculas
+    const normalizedPartnerName = partnerName.toLowerCase().replace(/\s+/g, '');
+
+    // Busca en la base de datos usuarios cuyo `associatedPartner` normalizado coincida
+    const users = await installer.find({
+      $expr: {
+        $eq: [
+          { $replaceAll: { input: { $toLower: "$associatedPartner" }, find: " ", replacement: "" } },
+          normalizedPartnerName,
+        ],
+      },
+    });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found with the given partner name' });
     }
-    res.status(200).json(user);
+
+    res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user', error });
+    res.status(500).json({ message: 'Error fetching users', error });
   }
 };
 

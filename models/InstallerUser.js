@@ -42,6 +42,19 @@ const userSchema = new mongoose.Schema({
   },
   associatedPartner: {
     type: String
+  },
+  // Nuevos campos
+  kwGenerated: {
+    type: Number,
+    default: 0 // Valor inicial para usuarios existentes
+  },
+  Earnings: {
+    type: Number,
+    default: 0 // Valor inicial para usuarios existentes
+  },
+  tokens_distributed: {
+    type: Number,
+    default: 0 // Valor inicial para usuarios existentes
   }
 }, {
   timestamps: true

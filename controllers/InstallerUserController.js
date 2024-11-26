@@ -56,3 +56,25 @@ exports.eliminarUsuario = async (req, res) => {
       res.status(500).json({ message: 'Error al eliminar el usuario', error });
     }
   };
+
+exports.updateUsers = async (req,res) => {
+    try {
+
+      // Actualiza los documentos existentes
+      const result = await installer.updateMany(
+        { }, // No hay filtro, se actualizan todos
+        {
+          $set: {
+            kwGenerated: 0,
+            Earnings: 0,
+            tokens_distributed: 0
+          }
+        }
+      );
+      res.status(200).json({ message: 'Usuario Actualizados' });
+      console.log(`Usuarios actualizados: ${result.nModified}`);
+    } catch (error) {
+      res.status(500).json({ message: 'Error actualizando usuarios', error });
+      console.error('Error actualizando usuarios:', error);
+    }
+  };
