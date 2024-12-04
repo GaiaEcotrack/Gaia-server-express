@@ -208,6 +208,25 @@ const deleteAllUsers = async (req, res) => {
   }
 };
 
+// const updateUsersCountry = async (req,res) => {
+//   try {
+
+//     // Actualiza los documentos existentes
+//     const result = await Generador.updateMany(
+//       { }, // No hay filtro, se actualizan todos
+//       {
+//         $set: {
+//           municipality: "",
+//         }
+//       }
+//     );
+//     res.status(200).json({ message: 'Usuario Actualizados' });
+//     console.log(`Usuarios actualizados: ${result.nModified}`);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error actualizando usuarios', error });
+//     console.error('Error actualizando usuarios:', error);
+//   }
+// };
 
 // controlador para filtrar usuarios segun empresa instaladora
 const getUsersByInstaller = async (req, res) => {
@@ -223,6 +242,47 @@ const getUsersByInstaller = async (req, res) => {
     res.json(generadores);
   } catch (error) {
     res.status(500).send('Error al obtener usuarios por empresa instaladora');
+  }
+};
+
+
+// controlador para filtrar usuarios el pais
+const getUserByCountry = async (req, res) => {
+  const { country } = req.params;
+
+  try {
+    const generadores = await Generador.find({ country });
+
+    if (!generadores.length) {
+      return res.status(404).send('No se encontraron usuarios en el país seleccionado');
+    }
+
+    // Sumar los `generatedKW` de todos los usuarios filtrados
+    const totalKW = generadores.reduce((sum, generador) => sum + (generador.generatedKW || 0), 0);
+
+    res.json({ usuarios: generadores, totalKW });
+  } catch (error) {
+    res.status(500).send(`Error al obtener usuarios por país: ${error.message}`);
+  }
+};
+
+
+// controlador para filtrar usuarios segun el departamento
+const getUserByDepartament = async (req, res) => {
+  const { departament } = req.params;
+
+  try {
+    const generadores = await Generador.find({ departament });
+
+    if (!generadores.length) {
+      return res.status(404).send('No se encontraron usuarios en el departamento seleccionado');
+    }
+    // Sumar los `generatedKW` de todos los usuarios filtrados
+    const totalKW = generadores.reduce((sum, generador) => sum + (generador.generatedKW || 0), 0);
+
+    res.json({ usuarios: generadores, totalKW });
+  } catch (error) {
+    res.status(500).send('Error al obtener usuarios por departamento',error);
   }
 };
 
@@ -274,5 +334,8 @@ module.exports = {
   getUsersByInstaller,
   createUsers,
   countUsers,
-  deleteAllUsers
+  deleteAllUsers,
+  getUserByCountry,
+  getUserByDepartament
+  // updateUsersCountry
 };
