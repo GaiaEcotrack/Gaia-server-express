@@ -5,7 +5,7 @@ const Credenciales = require('../models/credenciales');
 const sendContracMessage = require('./tokenController');
 const executeCommand = require('./sailsController')
 const {decodeAddress} = require('@gear-js/api');
-const { getDevicesByPlantList } = require('../helpers/growatt');
+const { getDevicesByPlantList,getCarboonPlantData } = require('../helpers/growatt');
 
 const updateKw = async (username) => {
     try {
@@ -86,15 +86,25 @@ async function actualizarKwGeneradoParaUsuarios() {
                 await user.save();
                 console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
             } else if (user.brand === "Growatt") {
-                let kwGeneradoGrowatt = await getDevicesByPlantList(user.secret_name);
-                kwGenerado = parseInt(kwGeneradoGrowatt[0].eToday);
-                user.generatedKW += kwGenerado;
-
-                tokens = kwGenerado; // En el caso de Growatt, se envían los kW directamente como tokens
-                user.tokens += tokens;
-
-                await user.save();
-                console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);
+                try {
+                    const [kwGeneradoGrowatt, c02Data] = await Promise.all([
+                        getDevicesByPlantList(user.secret_name),
+                        getCarboonPlantData(user.secret_name) // Ejemplo de otra petición
+                    ]);
+            
+                    kwGenerado = parseInt(kwGeneradoGrowatt[0].eToday);
+                    user.generatedKW += kwGenerado;
+    
+                    tokens = kwGenerado; // En el caso de Growatt, se envían los kW directamente como tokens
+                    user.tokens += tokens;
+                    user.c02 =c02Data.obj.co2
+                    user.rated_power=c02Data.obj.nominalPower
+    
+                    await user.save();
+                    console.log(`Usuario ${user.name} actualizado con kwGenerado: ${user.generatedKW}`);   
+                } catch (error) {
+                    console.error(`Error al actualizar datos de Growatt para el usuario ${user.name}:`, error.message); 
+                }
             }
 
             // Enviar tokens al usuario

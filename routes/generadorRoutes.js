@@ -12,7 +12,7 @@ router.get('/tokens/:userId', tokenController.getUserTokens);
 router.get('/users', tokenController.getAllUsers);
 
 
-// Ruta para obtener los usuarios por pais
+// Ruta para obtener los usuarios por pais y su generacion
 router.get('/users/country/:country', tokenController.getUserByCountry);
 
 // Ruta para obtener los usuarios por departamento
