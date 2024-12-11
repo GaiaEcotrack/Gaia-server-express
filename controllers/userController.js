@@ -189,9 +189,9 @@ exports.addUser = async (req, res) => {
 };
 
 
-
 exports.updateUserProperty = async (req, res) => {
-  const { userId, property, value } = req.body;
+  const { userId } = req.params;
+  const { property, value } = req.body;
 
   // Validar los datos de entrada
   const { error } = updateSchema.validate({ userId, property, value });
