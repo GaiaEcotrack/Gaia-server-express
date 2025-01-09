@@ -24,7 +24,7 @@ router.post('/users', tokenController.addUser);
 router.delete('/users/:id', tokenController.deleteUser);
 router.delete('/users', tokenController.deleteAllUsers);
 router.put('/users/:id',tokenController.updateUser)
-// router.get('/users/update',tokenController.updateUsersCountry)
+// router.get('/users/update',tokenController.updateUsersWallet)
 
 
 // ruta para filtrar usuarios segun empresa instaladora

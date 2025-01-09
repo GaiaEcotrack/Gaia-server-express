@@ -208,20 +208,18 @@ const deleteAllUsers = async (req, res) => {
   }
 };
 
-const updateUsersCountry = async (req,res) => {
+const updateUsersWallet = async (req, res) => {
   try {
-
-    // Actualiza los documentos existentes
+    // Actualiza solo los documentos que no tienen la propiedad wallet
     const result = await Generador.updateMany(
-      { }, // No hay filtro, se actualizan todos
+      { wallet: { $exists: false } }, // Filtro para usuarios sin la propiedad wallet
       {
         $set: {
-          c02:0,
-          rated_power:0
+          wallet: "5HTJkawMqHSvVRi2XrE7vdTU4t5Vq1EDv2ZDeWSwNxmmQKEK",
         }
       }
     );
-    res.status(200).json({ message: 'Usuario Actualizados' });
+    res.status(200).json({ message: 'Usuarios actualizados' });
     console.log(`Usuarios actualizados: ${result.nModified}`);
   } catch (error) {
     res.status(500).json({ message: 'Error actualizando usuarios', error });
@@ -346,5 +344,5 @@ module.exports = {
   deleteAllUsers,
   getUserByCountry,
   getUserByDepartament,
-  // updateUsersCountry
+  updateUsersWallet
 };
