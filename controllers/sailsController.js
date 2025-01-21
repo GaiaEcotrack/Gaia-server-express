@@ -4,15 +4,16 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0xe3585bc58f62c52fe2eb85eb4d787a6d460e88daf25126bd4ca293b4a29be908';
+const contractId = '0x3930c32457eecd3dddf172fa357c6f3f7f2e6cf827ad19afe33f2443acb2ba0b';
 const idl = `type GaiaEvents = enum {
   VFTContractIdChanged: struct { old: opt actor_id, new: opt actor_id },
   RefundOfVaras: u128,
   VFTContractIdSet,
+  CertificateAdded: str,
   AdminRemoved: actor_id,
   DevicesAdded: str,
   MinTokensToAddSet,
-  TokensAdded,
+  TokensAdded: str,
   TokensBurned,
   SetTokensPerVaras,
   MintingScheduled: str,
@@ -49,6 +50,9 @@ type GaiaErrors = enum {
   ExternalCallTimeout,
   ArithmeticOverflow,
   InvalidDeviceType,
+  InvalidCertificateId,
+  CertificateAlreadyExists,
+  InvalidDates,
   DeviceAlreadyExists,
   InsufficientBalance,
   InvalidTransferAmount,
@@ -99,6 +103,7 @@ type GaiaQueryEvents = enum {
   Error: GaiaErrors,
   Producers: vec EnergyProduction,
   PropertiesFetched: GaiaProperties,
+  CarbonCertificates: vec CarbonCertificates,
 };
 
 type MintingSchedule = struct {
@@ -132,6 +137,14 @@ type GaiaProperties = struct {
   conversion_cooldown: u64,
 };
 
+type CarbonCertificates = struct {
+  owner: actor_id,
+  certificate_id: str,
+  value: u256,
+  issue_date: u64,
+  expiry_date: u64,
+};
+
 constructor {
   New : ();
   NewWithData : (vft_contract_id: opt actor_id, gaia_company_token: opt actor_id, min_tokens_to_add: u128, tokens_per_vara: u128, gaia_e_to_gaia_rate: u256, min_conversion_amount: u256, max_daily_conversion: u256, min_gaia_e_transfer: u256, max_gaia_e_per_kwh: u256, kwh_por_token: u256, conversion_cooldown: u64);
@@ -139,6 +152,7 @@ constructor {
 
 service GaiaService {
   AddAdmin : (new_admin: actor_id) -> GaiaEvents;
+  AddCarbonCertificate : (owner: actor_id, certificate_id: str, value: u256, issue_date: u64, expiry_date: u64) -> GaiaEvents;
   AddCompanyToken : (tokens_to_add: u128) -> GaiaEvents;
   AddDevice : (owner: actor_id, serial_number: str, location: str, type_device: str, device_brand: str) -> GaiaEvents;
   AddTokensToContract : (tokens_to_add: u128) -> GaiaEvents;
@@ -158,6 +172,7 @@ service GaiaService {
   TransferTokensCompany : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
   query ContractTotalVarasStored : () -> GaiaQueryEvents;
   query GetAllProperties : () -> GaiaQueryEvents;
+  query GetCarbonCertificates : () -> GaiaQueryEvents;
   query GetDevices : () -> GaiaQueryEvents;
   query GetEnergyProductionStats : (producer: actor_id, start_time: u64, end_time: u64) -> result (struct { u256, u256 }, GaiaErrors);
   query GetMitings : () -> GaiaQueryEvents;
@@ -171,8 +186,6 @@ service GaiaService {
   query TotalTokensToSwap : () -> GaiaQueryEvents;
   query TotalTokensToSwapAsU128 : () -> GaiaQueryEvents;
 };
-
-
 
 `;
 

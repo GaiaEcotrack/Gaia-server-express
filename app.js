@@ -11,6 +11,7 @@ const cron = require('node-cron');
 const morgan = require('morgan');
 const axios = require('axios')
 const { sailsInstance, signerFromAccount } = require('./services/SailsService/utils');
+const { version } = require('./package.json');
 
 // Load environment variables
 dotenv.config();
@@ -53,13 +54,17 @@ const userComercial = require('./routes/userComercialRoutes');
 const userInstaller = require('./routes/installerRoutes');
 const salisRoute = require('./routes/salisRoutes');
 const kycRoute = require('./routes/sendEmailRoute')
+const chatbotRoutes = require("./routes/chatbotRoute");
 const { getDevicesByPlantList } = require('./helpers/growatt');
 
 // Use routes
 app.use('/api', apiRoutes);
 app.get("/api", (req, res) => {
-    res.send("App running 👍");
-});
+    res.json({
+      message: "App running 👍",
+      version: version,
+    });
+  });
 app.use('/generator',verifyToken,generadorRoutes);
 app.use('/credencials',verifyToken, credencialsUser);
 app.use('/auth', authRoutes);
@@ -68,6 +73,7 @@ app.use('/comercial',userComercial)
 app.use('/installer',userInstaller)
 app.use('/service',salisRoute)
 app.use('/kyc',kycRoute)
+app.use('/chatbot',chatbotRoutes)
 
 let isUpdating = false;
 
