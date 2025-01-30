@@ -235,8 +235,6 @@ const initializeConnection = async () => {
 const executeCommand = async (service, method, callArguments) => {
   try {
       // Asegurarse de que la conexión y el keyring están inicializados
-      await initializeConnection();
-
       // Ejecutar el comando utilizando la instancia existente
       const response = await sailsCalls.command(
           `${service}/${method}`,
@@ -256,15 +254,9 @@ const executeCommand = async (service, method, callArguments) => {
 const executeQueryForAll = async (service, method, callArguments) => {
   try {
     
-      // Set the SailsCalls instance
-      const sailsCalls = await sailsInstance(network, contractId, idl);
-      keyring = await signerFromAccount(accountName, accountMnemonic);
-      
-
       // Enviar la consulta al programa
       const response = await sailsCalls.query(
           `${service}/${method}`,
-          keyring,
           { callArguments }
       );
 

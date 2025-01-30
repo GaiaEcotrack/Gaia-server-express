@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const updateFunctions = require('./controllers/updateKwController');
-const executeCommand = require('./controllers/sailsController')
+const varaConnection = require('./controllers/sailsController')
 const sendContracMessage = require('./controllers/tokenController');
 const verifyToken = require('./middlewares/authMiddleware');
 const cron = require('node-cron');
@@ -122,6 +122,7 @@ cron.schedule('00 20 * * *', async () => {
 const IP = '0.0.0.0'; // Cambia esta IP por la correcta de tu servidor
 const PORT =  8080;
 
+varaConnection.initializeConnection()
 
 
 
