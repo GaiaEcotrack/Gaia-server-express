@@ -1,4 +1,7 @@
 const installer = require('../models/InstallerUser');
+const Generador = require('../models/generador');
+const credenciales = require('../models/credenciales');
+const md5 = require("md5");
 
 // Crear un nuevo usuario
 exports.crearUsuario = async (req, res) => {
@@ -8,6 +11,29 @@ exports.crearUsuario = async (req, res) => {
       res.status(201).json(usuarioGuardado);
     } catch (error) {
       res.status(400).json({ message: 'Error al crear el usuario', error });
+    }
+  };
+
+
+  exports.addGeneratorByInstaller = async (req, res) => {
+    try {
+      // Encriptar la contraseña antes de guardar
+      const encryptedPassword = md5(req.body.password);
+  
+      // Crear credenciales con la contraseña encriptada
+      const credentials = new credenciales({
+        ...req.body,
+        password: encryptedPassword,
+      });
+      await credentials.save();
+  
+      // Crear el generador asociado
+      const nuevoUsuario = new Generador(req.body);
+      const usuarioGuardado = await nuevoUsuario.save();
+  
+      res.status(201).json({ usuarioGuardado, credentials });
+    } catch (error) {
+      res.status(400).json({ message: "Error al crear el usuario", error });
     }
   };
 

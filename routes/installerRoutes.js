@@ -5,6 +5,9 @@ const usuarioController = require('../controllers/InstallerUserController');
 // Crear un nuevo usuario
 router.post('/', usuarioController.crearUsuario);
 
+// Crear un nuevo Generador Growatt
+router.post('/add-generator', usuarioController.addGeneratorByInstaller);
+
 // Obtener todos los usuarios
 router.get('/', usuarioController.obtenerUsuarios);
 

@@ -45,7 +45,7 @@ exports.combinedPlantDataController = async (req, res) => {
 
     res.status(200).json({data:combinedResponse});
   } catch (error) {
-    console.error('Error en la combinación de datos:', error.message);
+    console.error('Error en la combinación de datos:', error);
     res.status(500).json({ message: 'Error al obtener los datos combinados' });
   }
 };

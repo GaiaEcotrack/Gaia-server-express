@@ -4,9 +4,11 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0x3930c32457eecd3dddf172fa357c6f3f7f2e6cf827ad19afe33f2443acb2ba0b';
+const contractId = '0xa5c8cf8dc75404f45c7605dbe538076a162b662b82ed4f779a5759ad996e5bee';
 const idl = `type GaiaEvents = enum {
   VFTContractIdChanged: struct { old: opt actor_id, new: opt actor_id },
+  TokensSwapSuccessfullyEnergy: struct { total_tokens: u128, total_company_tokens: u128 },
+  ApprovalSuccessful: struct { owner: actor_id, spender: actor_id, amount: u128 },
   RefundOfVaras: u128,
   VFTContractIdSet,
   CertificateAdded: str,
@@ -86,17 +88,26 @@ type GaiaErrors = enum {
   ExceededConversionLimit,
   ExceededMintingLimit,
   AdminNotFound,
+  CantSwapVftWithAmount: struct { min_amount: u128, actual_amount: u128 },
+  CompanyTokenContractIdNotSet,
+  InsufficientBalanceEnergy: struct { required: u256, available: u256 },
+  TransferFailed,
+  BalanceCheckFailed,
+  ApprovalFailed,
+  BurnFailed,
 };
 
 type GaiaQueryEvents = enum {
   ContractBalanceInVaras: u128,
   Mitings: vec MintingSchedule,
   Devices: vec Devices,
+  Admins: vec actor_id,
   TotalTokensUserEnergy: u128,
   TotalTokensUserCompany: u128,
   UserTotalTokensAsU128: u128,
   UserTotalTokens: u256,
   TotalTokensToSwap: u256,
+  TotalTokensToSwapEnergyAndCompany: struct { u128, u128 },
   TotalTokensToSwapAsU128: u128,
   TokensToSwapOneVara: u128,
   NumOfTokensForOneVara: u128,
@@ -104,6 +115,7 @@ type GaiaQueryEvents = enum {
   Producers: vec EnergyProduction,
   PropertiesFetched: GaiaProperties,
   CarbonCertificates: vec CarbonCertificates,
+  TransferRecords: vec TransferRecord,
 };
 
 type MintingSchedule = struct {
@@ -145,6 +157,14 @@ type CarbonCertificates = struct {
   expiry_date: u64,
 };
 
+type TransferRecord = struct {
+  from: actor_id,
+  to: actor_id,
+  amount: u128,
+  timestamp: u64,
+  token_type: str,
+};
+
 constructor {
   New : ();
   NewWithData : (vft_contract_id: opt actor_id, gaia_company_token: opt actor_id, min_tokens_to_add: u128, tokens_per_vara: u128, gaia_e_to_gaia_rate: u256, min_conversion_amount: u256, max_daily_conversion: u256, min_gaia_e_transfer: u256, max_gaia_e_per_kwh: u256, kwh_por_token: u256, conversion_cooldown: u64);
@@ -158,7 +178,6 @@ service GaiaService {
   AddTokensToContract : (tokens_to_add: u128) -> GaiaEvents;
   ChangeCooldown : (conversion_cooldown: u64) -> GaiaEvents;
   ChangeProperty : (property: str, value: u256) -> GaiaEvents;
-  ConvertGaiaEToGaia : (from: actor_id, amount: u256) -> GaiaEvents;
   ExecuteMintings : (time: u64) -> GaiaEvents;
   MintTokensToUser : (recipient: actor_id, amount: u256) -> GaiaEvents;
   RemoveAdmin : (admin_to_remove: actor_id) -> GaiaEvents;
@@ -166,19 +185,23 @@ service GaiaService {
   SetMinTokensToAdd : (min_tokens_to_add: u128) -> GaiaEvents;
   SetTokensPerVara : (tokens_per_vara: u128) -> GaiaEvents;
   SetVftContractId : (new_vft_contract_id: actor_id) -> GaiaEvents;
+  SwapGaiaEToGaiaCompany : (amount_of_vft: u128) -> GaiaEvents;
   SwapTokensByNumOfVaras : () -> GaiaEvents;
   SwapTokensToVaras : (amount_of_tokens: u128) -> GaiaEvents;
-  TransferTokensBetweenUsers : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
-  TransferTokensCompany : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
+  TransferGaiaCompanyToken : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
+  TransferGaiaETokens : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
   query ContractTotalVarasStored : () -> GaiaQueryEvents;
+  query GetAdmins : () -> GaiaQueryEvents;
   query GetAllProperties : () -> GaiaQueryEvents;
   query GetCarbonCertificates : () -> GaiaQueryEvents;
   query GetDevices : () -> GaiaQueryEvents;
   query GetEnergyProductionStats : (producer: actor_id, start_time: u64, end_time: u64) -> result (struct { u256, u256 }, GaiaErrors);
   query GetMitings : () -> GaiaQueryEvents;
   query GetProducers : () -> GaiaQueryEvents;
+  query GetSwapTotalsGaiaeToGaiaCompany : () -> GaiaQueryEvents;
   query GetTotalSupplyGaiaCompany : () -> GaiaEvents;
   query GetTotalSupplyGaiaE : () -> GaiaEvents;
+  query GetTransferRecords : () -> GaiaQueryEvents;
   query IsAdmin : () -> bool;
   query TokensToSwapOneVara : () -> GaiaQueryEvents;
   query TotalTokensCompany : (wallet: actor_id) -> GaiaQueryEvents;
@@ -186,6 +209,7 @@ service GaiaService {
   query TotalTokensToSwap : () -> GaiaQueryEvents;
   query TotalTokensToSwapAsU128 : () -> GaiaQueryEvents;
 };
+
 
 `;
 
@@ -229,6 +253,32 @@ const executeCommand = async (service, method, callArguments) => {
 };
 
 
+const executeQueryForAll = async (service, method, callArguments) => {
+  try {
+    
+      // Set the SailsCalls instance
+      const sailsCalls = await sailsInstance(network, contractId, idl);
+      keyring = await signerFromAccount(accountName, accountMnemonic);
+      
+
+      // Enviar la consulta al programa
+      const response = await sailsCalls.query(
+          `${service}/${method}`,
+          keyring,
+          { callArguments }
+      );
+
+
+      
+
+      // Retornar la respuesta
+      return response
+  } catch (e) {
+      console.error('Error while reading state:', e);
+  }
+};
+
+
 // Definir la función para ejecutar la consulta
 const executeQuery = async (req,res) => {
     try {
@@ -244,9 +294,6 @@ const executeQuery = async (req,res) => {
         );
 
         console.log(callArguments);
-        
-
-        console.log('Response:', response);
 
         // Retornar la respuesta
         res.status(200).send(response)
@@ -254,6 +301,40 @@ const executeQuery = async (req,res) => {
         console.error('Error while reading state:', e);
         res.status(400).send(e)
     }
+};
+const executeAllQueries = async (req, res) => {
+  try {
+    // Define todos los métodos de las queries que quieres ejecutar
+    const methods = [
+      'ContractTotalVarasStored',
+      "GetAdmins",
+      'GetAllProperties',
+      'GetCarbonCertificates',
+      'GetDevices',
+      'GetEnergyProductionStats',
+      'GetMitings',
+      'GetProducers',
+      'GetSwapTotalsGaiaeToGaiaCompany',
+      'GetTotalSupplyGaiaCompany',
+      'GetTotalSupplyGaiaE',
+      'GetTransferRecords',
+      'TokensToSwapOneVara',
+      'TotalTokensCompany',
+      'TotalTokensEnergy',
+      'TotalTokensToSwap',
+      'TotalTokensToSwapAsU128'
+    ];
+
+    // Ejecutar todas las queries en paralelo
+    const queryPromises = methods.map((method) => executeQueryForAll('GaiaService', method, []));
+    const results = await Promise.all(queryPromises);
+
+    // Devolver todos los resultados juntos
+    res.status(200).send(results);
+  } catch (e) {
+    console.error('Error while executing queries:', e);
+    res.status(400).send(e);
+  }
 };
 
 
@@ -275,4 +356,6 @@ module.exports = {
     executeQuery,
     initializeConnection ,
     postService,
+    executeAllQueries
+    
 };

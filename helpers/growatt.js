@@ -173,6 +173,7 @@ const getAllPlants = async (user_client) => {
 const getDevicesByPlantList = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
+  console.log('Contenido de requestId:', requestId);
 
   // Eliminar espacios del user_client que se busca
   const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas

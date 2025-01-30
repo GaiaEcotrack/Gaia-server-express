@@ -129,15 +129,17 @@ const getAllUsers = async (req, res) => {
 
 // Controlador para agregar un nuevo usuario
 const addUser = async (req, res) => {
-  const { name , wallet , secret_name,installation_company,brand } = req.body;
+  const { name , wallet , secret_name,installation_company,brand ,country,departament,municipality} = req.body;
 
   try {
-    const newGenerador = new Generador({ name,wallet,secret_name,installation_company,brand });
+    const newGenerador = new Generador({ name,wallet,secret_name,installation_company,brand,country,departament,municipality });
     await newGenerador.save();
 
     res.status(201).send('Usuario agregado correctamente');
   } catch (error) {
     res.status(500).send('Error al agregar usuario');
+    console.log(error);
+    
   }
 };
 
