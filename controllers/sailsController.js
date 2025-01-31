@@ -4,7 +4,7 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0xa5c8cf8dc75404f45c7605dbe538076a162b662b82ed4f779a5759ad996e5bee';
+const contractId = '0x2e178a0a3d10307c8aa961b1d06977599a46d7c0e1925df9d285add810c7a115';
 const idl = `type GaiaEvents = enum {
   VFTContractIdChanged: struct { old: opt actor_id, new: opt actor_id },
   TokensSwapSuccessfullyEnergy: struct { total_tokens: u128, total_company_tokens: u128 },
@@ -185,7 +185,7 @@ service GaiaService {
   SetMinTokensToAdd : (min_tokens_to_add: u128) -> GaiaEvents;
   SetTokensPerVara : (tokens_per_vara: u128) -> GaiaEvents;
   SetVftContractId : (new_vft_contract_id: actor_id) -> GaiaEvents;
-  SwapGaiaEToGaiaCompany : (amount_of_vft: u128) -> GaiaEvents;
+  SwapGaiaEToGaiaCompany : (from: actor_id, amount_of_vft: u128) -> GaiaEvents;
   SwapTokensByNumOfVaras : () -> GaiaEvents;
   SwapTokensToVaras : (amount_of_tokens: u128) -> GaiaEvents;
   TransferGaiaCompanyToken : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
@@ -209,6 +209,7 @@ service GaiaService {
   query TotalTokensToSwap : () -> GaiaQueryEvents;
   query TotalTokensToSwapAsU128 : () -> GaiaQueryEvents;
 };
+
 
 
 `;
