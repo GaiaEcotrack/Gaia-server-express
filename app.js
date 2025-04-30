@@ -5,7 +5,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const updateFunctions = require('./controllers/updateKwController');
 const varaConnection = require('./controllers/sailsController')
-const sendContracMessage = require('./controllers/tokenController');
+const sendContracMessage = require('./controllers/generadorController');
 const verifyToken = require('./middlewares/authMiddleware');
 const cron = require('node-cron');
 const morgan = require('morgan');
@@ -55,7 +55,8 @@ const userInstaller = require('./routes/installerRoutes');
 const salisRoute = require('./routes/salisRoutes');
 const kycRoute = require('./routes/sendEmailRoute')
 const chatbotRoutes = require("./routes/chatbotRoute");
-const { getDevicesByPlantList } = require('./helpers/growatt');
+const stripeRoute = require("./routes/stripeRoute");
+const paymentRoute = require("./routes/paymentRoutes");
 
 // Use routes
 app.use('/api', apiRoutes);
@@ -71,9 +72,12 @@ app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/comercial',userComercial)
 app.use('/installer',userInstaller)
-app.use('/service',salisRoute)
+app.use('/service',verifyToken,salisRoute)
 app.use('/kyc',kycRoute)
 app.use('/chatbot',chatbotRoutes)
+app.use('/stripe',stripeRoute)
+app.use('/payment',paymentRoute)
+
 
 let isUpdating = false;
 
@@ -110,6 +114,9 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error(err));
 
+
+
+
 // Start updating users
 cron.schedule('00 20 * * *', async () => {
     console.log('Iniciando la actualización de usuarios programada.');
@@ -118,6 +125,9 @@ cron.schedule('00 20 * * *', async () => {
     scheduled: true,
     timezone: "America/Bogota" // Zona horaria de Colombia
 });
+
+
+
 
 const IP = '0.0.0.0'; // Cambia esta IP por la correcta de tu servidor
 const PORT =  8080;

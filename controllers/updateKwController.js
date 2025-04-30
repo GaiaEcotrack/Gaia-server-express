@@ -2,7 +2,7 @@ const axios = require('axios');
 const moment = require('moment-timezone');
 const generador = require('../models/generador');
 const Credenciales = require('../models/credenciales');
-const sendContracMessage = require('./tokenController');
+const sendContracMessage = require('./generadorController');
 const executeCommand = require('./sailsController');
 const { decodeAddress } = require('@gear-js/api');
 const { getDevicesByPlantList, getCarboonPlantData } = require('../helpers/growatt');
@@ -88,7 +88,7 @@ const sendTokens = async (user, tokens) => {
         let tokenEnviado = false;
         let intentos = 0;
 
-        while (!tokenEnviado && intentos < 3) { // Intentar hasta 3 veces antes de seguir con el siguiente token
+        while (!tokenEnviado && intentos < 3) { // Try up to 3 times before proceeding to the next token
             try {
                 const wallet = decodeAddress(user.wallet);
                 await executeCommand.executeCommand("GaiaService", "MintTokensToUser", [wallet, 1]);
@@ -97,7 +97,7 @@ const sendTokens = async (user, tokens) => {
             } catch (error) {
                 intentos++;
                 console.error(`Error al enviar token ${i + 1} a Usuario ${user.secret_name}:`, error.message);
-                await new Promise(resolve => setTimeout(resolve, 3000)); // Espera de 3 segundos antes de reintentar
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retrying
             }
         }
 
@@ -105,7 +105,7 @@ const sendTokens = async (user, tokens) => {
             console.error(`No se pudo enviar el token ${i + 1} a Usuario ${user.secret_name} después de varios intentos.`);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Espera adicional de 1 segundo entre cada token enviado
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Additional wait of 3 second between each token sent
     }
 };
 
@@ -123,10 +123,10 @@ async function actualizarKwGeneradoParaUsuarios() {
                 kwGenerado = parseInt(kwGeneradoHoymiles);
                 user.generatedKW += kwGenerado;
 
-                tokens = Math.floor(kwGenerado / 1000); // 1 token por cada 1000kW
+                tokens = Math.floor(kwGenerado / 1000); // 1 token per 1000 watts
                 user.tokens += tokens;
 
-                // Verificar y asignar valores predeterminados si es necesario
+                 // Verify and assign default values if necessary
                 if (!user.departament) user.departament = "default_departament";
                 if (!user.municipality) user.municipality = "default_municipality";
 
@@ -136,18 +136,18 @@ async function actualizarKwGeneradoParaUsuarios() {
                 try {
                     const [kwGeneradoGrowatt, c02Data] = await Promise.all([
                         getDevicesByPlantList(user.secret_name),
-                        getCarboonPlantData(user.secret_name) // Ejemplo de otra petición
+                        getCarboonPlantData(user.secret_name) // Example of another request
                     ]);
 
                     kwGenerado = parseInt(kwGeneradoGrowatt[0].eToday);
                     user.generatedKW += kwGenerado;
 
-                    tokens = kwGenerado; // En el caso de Growatt, se envían los kW directamente como tokens
+                    tokens = kwGenerado; // In the case of Growatt, kW is sent directly as tokens.
                     user.tokens += tokens;
                     user.c02 = c02Data.obj.co2;
                     user.rated_power = c02Data.obj.nominalPower;
 
-                    // Verificar y asignar valores predeterminados si es necesario
+                    // Verify and assign default values if necessary
                     if (!user.departament) user.departament = "default_departament";
                     if (!user.municipality) user.municipality = "default_municipality";
 

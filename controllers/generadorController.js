@@ -214,10 +214,11 @@ const updateUsersWallet = async (req, res) => {
   try {
     // Actualiza solo los documentos que no tienen la propiedad wallet
     const result = await Generador.updateMany(
-      { wallet: { $exists: false } }, // Filtro para usuarios sin la propiedad wallet
+      { email: { $exists: false } }, // Filtro para usuarios sin la propiedad wallet
       {
         $set: {
-          wallet: "5HTJkawMqHSvVRi2XrE7vdTU4t5Vq1EDv2ZDeWSwNxmmQKEK",
+          email: "email@gmail.com",
+          membership:false
         }
       }
     );

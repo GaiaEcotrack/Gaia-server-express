@@ -306,7 +306,6 @@ const executeAllQueries = async (req, res) => {
       'GetDevices',
       'GetEnergyProductionStats',
       'GetMitings',
-      'GetProducers',
       'GetSwapTotalsGaiaeToGaiaCompany',
       'GetTotalSupplyGaiaCompany',
       'GetTotalSupplyGaiaE',
@@ -321,6 +320,17 @@ const executeAllQueries = async (req, res) => {
     // Ejecutar todas las queries en paralelo
     const queryPromises = methods.map((method) => executeQueryForAll('GaiaService', method, []));
     const results = await Promise.all(queryPromises);
+
+        // Ejecutar GetProducers
+        const allProducers = await executeQueryForAll('GaiaService', 'GetProducers', []);
+
+        // Obtener solo los últimos 100 productores
+        const last100Producers = allProducers.producers.slice(-100);
+    
+        // Agregar los productores al resultado
+        results.push({ producers: last100Producers, totalProducers: allProducers.length });
+    
+    
 
     // Devolver todos los resultados juntos
     res.status(200).send(results);

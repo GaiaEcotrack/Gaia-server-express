@@ -1,3 +1,4 @@
+const { boolean } = require("joi");
 const mongoose = require("mongoose");
 
 const generadorSchema = new mongoose.Schema({
@@ -6,6 +7,8 @@ const generadorSchema = new mongoose.Schema({
   tokens: { type: Number, default: 0 },
   c02: { type: Number, default: 0 },
   rated_power: { type: Number, default: 0 },
+  email: { type: String, required: true },
+  membership: { type: Boolean, default: false },
   secret_name: String,
   wallet: String,
   installation_company: String,

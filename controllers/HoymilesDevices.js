@@ -1,7 +1,8 @@
 const axios = require('axios');
 const moment = require('moment-timezone');
 
-const Credenciales = require('../models/credenciales')
+const Credenciales = require('../models/credenciales');
+const { log } = require('async');
 
 // Configurar la URL de conexión a MongoDB y la base de datos
 
@@ -11,9 +12,6 @@ const getDataFromExternalApi = async (req, res) => {
 
     try {
         const api = process.env.API_HM;
-
-        // Verifica que la URL de la API esté correctamente configurada
-        console.log('API URL:', api);
 
         // Obtén el username del cuerpo de la solicitud
         const { user_name } = req.body;
@@ -35,7 +33,7 @@ const getDataFromExternalApi = async (req, res) => {
         const password = user.password;
 
         // Realiza la solicitud para obtener el token
-        const authResponse = await axios.post(`${api}/iam/auth_login`, {
+        const authResponse = await axios.post(`${api}/iam/pub/0/auth/login`, {
             user_name,
             password
         });
@@ -48,36 +46,39 @@ const getDataFromExternalApi = async (req, res) => {
         // Obtén el token del cuerpo de la respuesta
         const token = authResponse.data.data.token;
 
-        // Configura la cookie que necesitas enviar
-        const cookie = `_ga=GA1.1.932132531.1716916654; hm_token_language=es_es; hm_token=${token}; _ga_JRG1385S8G=GS1.1.1718377381.11.1.1718377664.0.0.0`;
-
         // Realiza la solicitud inicial para obtener el ID
-        const initialResponse = await axios.post(`${api}/pvm/station_select_by_page`, {
+        const initialResponse = await axios.post(`${api}/pvm/api/0/station/select_by_page`, {
             page: 1,
             page_size: 1
         }, {
             headers: {
-                'Cookie': cookie
+                Authorization: `${token}`,
+                "Content-Type": "application/json",
             }
         });
 
         // Verifica si la solicitud inicial fue exitosa
         if (initialResponse.data.status !== "0") {
+            console.log(initialResponse.data);
+            
             return res.status(500).send('Error al obtener datos iniciales');
         }
 
         // Obtiene el ID necesario para la siguiente solicitud
         const sid = initialResponse.data.data.list[0].id;
 
+        
+
         // Obtén la fecha actual en la zona horaria de Colombia en formato YYYY-MM-DD
         const currentDate = moment().tz('America/Bogota').format('YYYY-MM-DD');
 
         // Realiza la solicitud a la API externa con axios usando el SID obtenido
-        const response = await axios.post(`${api}/pvm-data/data_count_station_real_data`,
+        const response = await axios.post(`${api}/pvm-data/api/0/station/data/count_station_real_data`,
             { sid, mode: 1, date: currentDate },
             {
                 headers: {
-                    'Cookie': cookie
+                    Authorization: `${token}`,
+                    "Content-Type": "application/json",
                 }
             }
         );
@@ -87,9 +88,7 @@ const getDataFromExternalApi = async (req, res) => {
     } catch (error) {
         // Maneja errores
         console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('Error config:', error.config);
-        console.error('Error request:', error.request ? error.request : 'No request made');
+        
         res.status(500).send('Error al obtener datos de la API externa');
     } finally {
         // Asegúrate de cerrar la conexión a la base de datos
@@ -141,8 +140,7 @@ const getDataOfDevice = async (req, res) => {
         // Obtén el token del cuerpo de la respuesta
         const token = authResponse.data.data.token;
 
-        // Configura la cookie que necesitas enviar
-        const cookie = `_ga=GA1.1.932132531.1716916654; hm_token_language=es_es; hm_token=${token}; _ga_JRG1385S8G=GS1.1.1718377381.11.1.1718377664.0.0.0`;
+    
 
         // Realiza la solicitud inicial para obtener el ID
         const initialResponse = await axios.post(`${api}/pvm/station_select_by_page`, {
@@ -150,12 +148,15 @@ const getDataOfDevice = async (req, res) => {
             page_size: 1
         }, {
             headers: {
-                'Cookie': cookie
+                Authorization: `${token}`,
+                "Content-Type": "application/json",
             }
         });
 
         // Verifica si la solicitud inicial fue exitosa
         if (initialResponse.data.status !== "0") {
+            console.log(initialResponse);
+            
             return res.status(500).send('Error al obtener datos iniciales');
         }
 

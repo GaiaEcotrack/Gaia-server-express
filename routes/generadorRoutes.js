@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const tokenController = require('../controllers/tokenController');
+const tokenController = require('../controllers/generadorController');
 
 // Ruta para registrar kW generados
 router.post('/generate', tokenController.generateKW);
