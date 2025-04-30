@@ -127,7 +127,7 @@ const getDataOfDevice = async (req, res) => {
         const password = user.password;
 
         // Realiza la solicitud para obtener el token
-        const authResponse = await axios.post(`${api}/iam/auth_login`, {
+        const authResponse = await axios.post(`${api}/iam/pub/0/auth/login`, {
             user_name,
             password
         });
@@ -143,7 +143,7 @@ const getDataOfDevice = async (req, res) => {
     
 
         // Realiza la solicitud inicial para obtener el ID
-        const initialResponse = await axios.post(`${api}/pvm/station_select_by_page`, {
+        const initialResponse = await axios.post(`${api}/pvm/api/0/station/select_by_page`, {
             page: 1,
             page_size: 1
         }, {
@@ -167,11 +167,11 @@ const getDataOfDevice = async (req, res) => {
         // const currentDate = moment().tz('America/Bogota').format('YYYY-MM-DD');
 
         // Realiza la solicitud a la API externa con axios usando el SID obtenido
-        const response = await axios.post(`${api}/pvm/station_select_device_of_tree`,
+        const response = await axios.post(`${api}/pvm/api/0/station/select_device_of_tree`,
             {id:sid},
             {
                 headers: {
-                    'Cookie': cookie
+                    Authorization: token
                 }
             }
         );
