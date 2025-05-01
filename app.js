@@ -26,6 +26,7 @@ app.use(express.json());
 // app.use(morgan('combined'));
 app.use(morgan('tiny'));
 
+console.log("MNEMONIC from env:", process.env.MNEMONIC);
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
@@ -133,8 +134,6 @@ const IP = '0.0.0.0'; // Cambia esta IP por la correcta de tu servidor
 const PORT =  8080;
 
 varaConnection.initializeConnection()
-
-
 
 
 app.listen(PORT, () => {

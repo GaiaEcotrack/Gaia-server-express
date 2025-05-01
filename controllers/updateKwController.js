@@ -9,7 +9,7 @@ const { getDevicesByPlantList, getCarboonPlantData } = require('../helpers/growa
 
 const authenticateUser = async (username, password, api) => {
     try {
-        const authResponse = await axios.post(`${api}/iam/auth_login`, {
+        const authResponse = await axios.post(`${api}/iam/pub/0/auth/login`, {
             user_name: username,
             password
         });
@@ -26,11 +26,11 @@ const authenticateUser = async (username, password, api) => {
 
 const fetchData = async (api, token, sid, currentDate) => {
     try {
-        const cookie = `_ga=GA1.1.932132531.1716916654; hm_token_language=es_es; hm_token=${token}; _ga_JRG1385S8G=GS1.1.1718377381.11.1.1718377664.0.0.0`;
+    
 
-        const response = await axios.post(`${api}/pvm-data/data_count_station_real_data`, 
+        const response = await axios.post(`${api}/pvm-data/api/0/station/data/count_station_real_data`, 
             { sid, mode: 1, date: currentDate }, 
-            { headers: { 'Cookie': cookie } }
+            { headers: { Authorization:token , "Content-Type": "application/json" } }
         );
 
         if (response.data.status !== "0") {
@@ -59,12 +59,13 @@ const updateKw = async (username) => {
 
         const token = await authenticateUser(username, user.password, api);
 
-        const initialResponse = await axios.post(`${api}/pvm/station_select_by_page`, {
+        const initialResponse = await axios.post(`${api}/pvm/api/0/station/select_by_page`, {
             page: 1,
             page_size: 1
         }, {
             headers: {
-                'Cookie': `_ga=GA1.1.932132531.1716916654; hm_token_language=es_es; hm_token=${token}; _ga_JRG1385S8G=GS1.1.1718377381.11.1.1718377664.0.0.0`
+                Authorization: token,
+                "Content-Type": "application/json",
             }
         });
 

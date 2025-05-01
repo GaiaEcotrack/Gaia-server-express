@@ -215,7 +215,7 @@ service GaiaService {
 `;
 
 const accountName = 'Admin';
-const accountMnemonic = 'sun pill sentence spoil ripple october funny ensure illness equal car demise';
+const accountMnemonic =process.env.MNEMONIC
 // Definir la función para ejecutar el comando
 //send tokens
 
@@ -224,13 +224,25 @@ let sailsCalls = null;
 let keyring = null;
 
 const initializeConnection = async () => {
-    if (!sailsCalls || !keyring) { // Solo inicializar si no están ya instanciados
-        console.log('Inicializando conexión a la red y keyring...');
-        sailsCalls = await sailsInstance(network, contractId, idl);
-        keyring = await signerFromAccount(accountName, accountMnemonic);
-    } else {
-        console.log('Conexión y keyring ya inicializados.');
-    }
+  try {
+      if (!process.env.MNEMONIC) {
+          throw new Error('MNEMONIC no está definido en las variables de entorno');
+      }
+      
+      if (!sailsCalls || !keyring) {
+          console.log('Inicializando conexión a la red y keyring...');
+          sailsCalls = await sailsInstance(network, contractId, idl);
+          keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
+          console.log('Conexión con Vara establecida correctamente');
+          return { success: true };
+      } else {
+          console.log('Conexión y keyring ya inicializados.');
+          return { success: true, message: 'Ya inicializado' };
+      }
+  } catch (e) {
+      console.error('Error al inicializar conexión con Vara:', e);
+      throw e; // Propaga el error para que pueda ser manejado por el llamador
+  }
 };
 
 const executeCommand = async (service, method, callArguments) => {
