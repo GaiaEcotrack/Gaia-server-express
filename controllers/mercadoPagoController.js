@@ -16,8 +16,8 @@ const PaymentController = {
           }
         ],
         back_urls: {
-          success: "http://localhost:3000/payment",
-          failure: "http://localhost:3000/payment",
+          success: "https://app.gaiaecotrack.com/payment",
+          failure: "https://app.gaiaecotrack.com/payment",
         },
         auto_return: 'approved',
       };
@@ -27,9 +27,6 @@ const PaymentController = {
 
       // Realiza la solicitud para crear la orden de pago
       const paymentResponse = await order.create({ body, requestOptions });
-
-      console.log(paymentResponse);
-      
       res.status(200).json(paymentResponse); // Devuelve la respuesta de Mercado Pago
     } catch (error) {
       console.error("Error al crear el pedido:", error);
