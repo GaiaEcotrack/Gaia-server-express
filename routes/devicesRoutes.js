@@ -4,8 +4,9 @@ const apiController = require('../controllers/HoymilesDevices');
 const growattController = require('../controllers/growattDevices');
 
 //HoyMiiles
-router.post('/real-time-data', apiController.getDataFromExternalApi);
+router.post('/real-time-data/hoymiles', apiController.getCombinedEnergyData);
 router.post('/device-info/hoymiles',apiController.getDataOfDevice)
+
 
 //Growatt
 router.post('/plant-info/growatt',growattController.getPlantListTitle)

@@ -173,7 +173,6 @@ const getAllPlants = async (user_client) => {
 const getDevicesByPlantList = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
-  console.log('Contenido de requestId:', requestId);
 
   // Eliminar espacios del user_client que se busca
   const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
@@ -229,6 +228,8 @@ const getCarboonPlantData = async (user_client) => {
   return data;
 };
 
+
+
 const getMAXDayChart = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
   const requestId = await getAllPlants(user_client);
@@ -247,17 +248,195 @@ const getMAXDayChart = async (user_client) => {
 
   // Usar el id de la planta encontrada como plantId
   const plantId = plant.id;
-  const baseUrl = 'https://openapi.growatt.com/panel/max/getMAXDayChart';
 
   if (!plantId) {
     throw new Error('Date y Plant ID son requeridos');
   }
-  
+
+  const devices = await getDevicesByPlantList(user_client);
+  const device = devices[0]; // Suponiendo que sólo te interesa el primer dispositivo
+
+  if (!device || !device.deviceTypeName) {
+    throw new Error('No se pudo determinar el tipo de dispositivo');
+  }
+
+  // Seleccionar la URL basada en el deviceTypeName
+  let baseUrl;
+  let body;
   const today = new Date().toISOString().split('T')[0];
   const headers = createHeaders(cookies);
-  const data = await makePostRequest(baseUrl, { date: today, plantId }, headers);
-  return data;
+
+  switch (device.deviceTypeName.toLowerCase()) {
+    case 'max':
+      baseUrl = 'https://openapi.growatt.com/panel/max/getMAXDayChart';
+      body = { date: today, plantId };
+      break;
+    case 'tlx':
+      baseUrl = 'https://openapi.growatt.com/panel/tlx/getTLXEnergyDayChart';
+      body = { date: today, plantId, tlxSn: device.sn };
+      break;
+    default:
+      throw new Error(`Tipo de dispositivo no soportado: ${device.deviceTypeName}`);
+  }
+  
+
+    // Hacer la petición
+    const response = await makePostRequest(baseUrl, body, headers);
+
+    // Extraer la parte deseada de la respuesta según el tipo
+    let chartData;
+    if (device.deviceTypeName.toLowerCase() === 'max') {
+      chartData = response?.obj?.pac ?? null;
+    } else if (device.deviceTypeName.toLowerCase() === 'tlx') {
+      chartData = response?.obj?.charts?.ppv ?? null;
+    }
+
+  return chartData;
 };
+
+
+
+
+const getMAXMonthChart = async (user_client) => {
+  const cookies = await getAuthCookies(user_client);
+  const requestId = await getAllPlants(user_client);
+
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
+
+  // Filtrar la planta cuyo nombre coincida con user_client, ignorando espacios y mayúsculas/minúsculas
+  const plant = requestId.find(plant => 
+    plant.plantName.replace(/\s+/g, '').toLowerCase() === cleanedUserClient
+  );
+
+  if (!plant) {
+    throw new Error(`No se encontró una planta con el nombre: ${user_client}`);
+  }
+    // Usar el id de la planta encontrada como plantId
+    const plantId = plant.id;
+
+    if (!plantId) {
+      throw new Error('Date y Plant ID son requeridos');
+    }
+    
+  
+
+  const devices = await getDevicesByPlantList(user_client);
+  const device = devices[0]; // Suponiendo que sólo te interesa el primer dispositivo
+
+  if (!device || !device.deviceTypeName) {
+    throw new Error('No se pudo determinar el tipo de dispositivo');
+  }
+
+  // Seleccionar la URL basada en el deviceTypeName
+  let baseUrl;
+  let body;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // +1 porque los meses van de 0-11
+  const today = `${year}-${month}`;
+
+  switch (device.deviceTypeName.toLowerCase()) {
+    case 'max':
+      baseUrl = 'https://openapi.growatt.com/panel/max/getMAXMonthChart'
+      body = { date: today, plantId };
+      break;
+    case 'tlx':
+      baseUrl = 'https://openapi.growatt.com/panel/tlx/getTLXEnergyMonthChart';
+      body = { date: today, plantId, tlxSn: device.sn };
+      break;
+    default:
+      throw new Error(`Tipo de dispositivo no soportado: ${device.deviceTypeName}`);
+  }
+  
+
+  const headers = createHeaders(cookies);
+    // Hacer la petición
+    const response = await makePostRequest(baseUrl, body, headers);
+
+    // Extraer la parte deseada de la respuesta según el tipo
+    let chartData;
+    if (device.deviceTypeName.toLowerCase() === 'max') {
+      chartData = response?.obj?.energy ?? null;
+    } else if (device.deviceTypeName.toLowerCase() === 'tlx') {
+      chartData = response?.obj?.charts?.energy ?? null;
+    }
+
+  return chartData;
+};
+
+
+const getMAXYearChart = async (user_client) => {
+  const cookies = await getAuthCookies(user_client);
+  const requestId = await getAllPlants(user_client);
+
+  // Eliminar espacios del user_client que se busca
+  const cleanedUserClient = user_client.replace(/\s+/g, '').toLowerCase(); // Elimina espacios y convierte a minúsculas
+
+  // Filtrar la planta cuyo nombre coincida con user_client, ignorando espacios y mayúsculas/minúsculas
+  const plant = requestId.find(plant => 
+    plant.plantName.replace(/\s+/g, '').toLowerCase() === cleanedUserClient
+  );
+
+  if (!plant) {
+    throw new Error(`No se encontró una planta con el nombre: ${user_client}`);
+  }
+
+  // Usar el id de la planta encontrada como plantId
+  const plantId = plant.id;
+
+  const devices = await getDevicesByPlantList(user_client);
+  const device = devices[0]; // Suponiendo que sólo te interesa el primer dispositivo
+
+  if (!device || !device.deviceTypeName) {
+    throw new Error('No se pudo determinar el tipo de dispositivo');
+  }
+
+  // Seleccionar la URL basada en el deviceTypeName
+  let baseUrl;
+  let body;
+
+    
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const today = `${year}`;
+
+  switch (device.deviceTypeName.toLowerCase()) {
+    case 'max':
+      baseUrl = 'https://openapi.growatt.com/panel/max/getMAXYearChart'
+      body = { year: today, plantId };
+      break;
+    case 'tlx':
+      baseUrl = 'https://openapi.growatt.com/panel/tlx/getTLXEnergyYearChart';
+      body = { year: today, plantId, tlxSn: device.sn };
+      break;
+    default:
+      throw new Error(`Tipo de dispositivo no soportado: ${device.deviceTypeName}`);
+  }
+
+  if (!plantId) {
+    throw new Error('Date y Plant ID son requeridos');
+  }
+
+  const headers = createHeaders(cookies);
+
+  const response = await makePostRequest(baseUrl, body, headers);
+
+  // Extraer la parte deseada de la respuesta según el tipo
+  let chartData;
+  if (device.deviceTypeName.toLowerCase() === 'max') {
+    chartData = response?.obj?.energy ?? null;
+  } else if (device.deviceTypeName.toLowerCase() === 'tlx') {
+    chartData = response?.obj?.charts?.energy ?? null;
+  }
+
+return chartData;
+};
+
+
+
 
 const getDataLog = async (user_client) => {
   const cookies = await getAuthCookies(user_client);
@@ -296,6 +475,8 @@ module.exports = {
   getCarboonPlantData,
   getMAXDayChart,
   getAllPlants,
-  getDataLog
+  getDataLog,
+  getMAXMonthChart,
+  getMAXYearChart
 
 };

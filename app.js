@@ -46,7 +46,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Import routes
-const apiRoutes = require('./routes/device');
+const apiRoutes = require('./routes/devicesRoutes');
 const generadorRoutes = require('./routes/generadorRoutes');
 const credencialsUser = require('./routes/credencialsRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -61,7 +61,7 @@ const paymentRoute = require("./routes/paymentRoutes");
 
 // Use routes
 app.use('/api', apiRoutes);
-app.get("/api", (req, res) => {
+app.get("/", (req, res) => {
     res.json({
       message: "App running 👍",
       version: version,
