@@ -5,13 +5,13 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const updateFunctions = require('./controllers/updateKwController');
 const varaConnection = require('./controllers/sailsController')
-const sendContracMessage = require('./controllers/generadorController');
 const verifyToken = require('./middlewares/authMiddleware');
 const cron = require('node-cron');
 const morgan = require('morgan');
-const axios = require('axios')
-const { sailsInstance, signerFromAccount } = require('./services/SailsService/utils');
+
 const { version } = require('./package.json');
+
+
 
 // Load environment variables
 dotenv.config();
@@ -26,11 +26,10 @@ app.use(express.json());
 // app.use(morgan('combined'));
 app.use(morgan('tiny'));
 
-console.log("MNEMONIC from env:", process.env.MNEMONIC);
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // máximo 100 peticiones por IP
+    max: 300, // máximo  peticiones por IP
     keyGenerator: (req) => req.ip, // Utiliza la IP real obtenida a través del proxy
 });
 app.use(limiter);

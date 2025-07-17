@@ -1,48 +1,24 @@
+const { processAIResponse,executeAction} = require("../helpers/iaHelper");
+
+
 exports.processUserMessage = async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, data } = req.body; // Asegúrate de que el cuerpo de la solicitud contenga 'userQuestion' y 'data'
+    const aiResponse = await processAIResponse(message, data);
+    console.log(message);
+    
 
-    // Preguntas predeterminadas
-    const defaultQuestions = [
-      "¿Cómo estás?",
-      "¿Qué servicios ofreces?",
-      "¿Cómo puedo contactarlos?",
-      "Dime más sobre Gaia",
-    ];
+    const actionResult = await executeAction(aiResponse);
 
-    if (!message) {
-      return res.status(200).json({ 
-        response: "Hazme una pregunta para ayudarte.",
-        defaultQuestions 
-      });
+    if (actionResult.question) {
+      return res.status(200).send({ message: actionResult.question });
     }
-
-    let botResponse;
-
-    switch (true) {
-      case /hola/i.test(message):
-        botResponse = "¡Hola! ¿En qué puedo ayudarte hoy?";
-        break;
-      case /cómo estás/i.test(message):
-        botResponse = "¡Estoy genial! Gracias por preguntar. 😊";
-        break;
-      case /qué servicios ofreces/i.test(message):
-        botResponse = "Ofrecemos soluciones tecnológicas personalizadas para tus necesidades.";
-        break;
-      case /cómo puedo contactarlos/i.test(message):
-        botResponse = "Puedes contactarnos a través de nuestro correo: contacto@gaia.com.";
-        break;
-      case /gaia/i.test(message):
-        botResponse = "Gaia es una empresa innovadora enfocada en soluciones tecnológicas sostenibles.";
-        break;
-      default:
-        botResponse = "Lo siento, no entiendo tu mensaje. ¿Puedes reformularlo?";
+    
+    if (actionResult.message) {
+      return res.status(200).send({ message: actionResult.message });
     }
-
-    return res.status(200).json({ 
-      response: botResponse,
-      defaultQuestions 
-    });
+    // Si la IA ejecutó una acción, devolver el resultado
+    return res.status(200).send(actionResult);
   } catch (error) {
     console.error("Error en processUserMessage:", error);
     return res.status(500).json({ error: "Error interno del servidor" });
