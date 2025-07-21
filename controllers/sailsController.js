@@ -4,56 +4,8 @@ const { sailsInstance, signerFromAccount } = require('../services/SailsService/u
 
 //INFO CONTRACT 
 const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0xd8813d1b3cee73fb021ca7b90e08461878a8ce844c49d103d7eca93ca8a34a31';
-const idl = `type GaiaEvents = enum {
-  VFTContractIdChanged: struct {
-    old: opt actor_id,
-    new: opt actor_id,
-  },
-  TokensSwapSuccessfullyEnergy: struct {
-    total_tokens: u128,
-    total_company_tokens: u128,
-  },
-  ApprovalSuccessful: struct {
-    owner: actor_id,
-    spender: actor_id,
-    amount: u128,
-  },
-  RefundOfVaras: u128,
-  VFTContractIdSet,
-  CertificateAdded: str,
-  AdminRemoved: actor_id,
-  DevicesAdded: str,
-  MinTokensToAddSet,
-  TokensAdded: str,
-  TokensBurned,
-  SetTokensPerVaras,
-  MintingScheduled: str,
-  MintingExecuted,
-  TotalSwapInVaras: u128,
-  TokensSwapSuccessfully: struct {
-    total_tokens: u128,
-    total_varas: u128,
-  },
-  AdminAdded: actor_id,
-  Error: GaiaErrors,
-  TransferSuccessful: struct {
-    from: actor_id,
-    to: actor_id,
-    amount: u128,
-    timestamp: u64,
-  },
-  TotalSupplyRetrieved: u256,
-  PropertyChanged: struct {
-    str,
-    u256,
-  },
-  CooldownChanged: struct {
-    old_value: u64,
-    new_value: u64,
-  },
-};
-
+const contractId = '0xc403513f83a6d232d8508358b3c4c9f5f03f7cd7241e69ffb657b13bc024b8e6';
+const idl = `
 type GaiaErrors = enum {
   MinTokensToAdd: u128,
   AdminExist,
@@ -136,6 +88,23 @@ type GaiaErrors = enum {
   BalanceCheckFailed,
   ApprovalFailed,
   BurnFailed,
+  InvalidMinTokensToAdd,
+  NotificationFailed,
+  InvalidTokenAmount: struct {
+    amount: u128,
+    divisible_by: u128,
+  },
+};
+
+type PropertyName = enum {
+  KwhPerToken,
+  GaiaEToGaiaRate,
+  MinConversionAmount,
+  MaxDailyConversion,
+  MinGaiaETransfer,
+  MaxGaiaEPerKwh,
+  ConversionCooldown,
+  ConversionRateVftToCompany,
 };
 
 type GaiaQueryEvents = enum {
@@ -159,6 +128,17 @@ type GaiaQueryEvents = enum {
   PropertiesFetched: GaiaProperties,
   CarbonCertificates: vec CarbonCertificates,
   TransferRecords: vec TransferRecord,
+  UserInfo: struct {
+    wallet: actor_id,
+    gaia_e_balance: u128,
+    gaia_company_balance: u128,
+    devices: vec Devices,
+    total_kwh: u128,
+    total_gaia_e_minted: u128,
+    carbon_certificates: vec CarbonCertificates,
+    transfer_records: vec TransferRecord,
+    minting_schedules: vec MintingSchedule,
+  },
 };
 
 type MintingSchedule = struct {
@@ -190,6 +170,7 @@ type GaiaProperties = struct {
   min_gaia_e_transfer: u256,
   max_gaia_e_per_kwh: u256,
   conversion_cooldown: u64,
+  conversion_rate_vft_to_company: u256,
 };
 
 type CarbonCertificates = struct {
@@ -214,48 +195,104 @@ constructor {
 };
 
 service GaiaService {
-  AddAdmin : (new_admin: actor_id) -> GaiaEvents;
-  AddCarbonCertificate : (owner: actor_id, certificate_id: str, value: u256, issue_date: u64, expiry_date: u64) -> GaiaEvents;
-  AddCompanyToken : (tokens_to_add: u128) -> GaiaEvents;
-  AddDevice : (owner: actor_id, serial_number: str, location: str, type_device: str, device_brand: str) -> GaiaEvents;
-  AddTokensToContract : (tokens_to_add: u128) -> GaiaEvents;
-  ChangeCooldown : (conversion_cooldown: u64) -> GaiaEvents;
-  ChangeProperty : (property: str, value: u256) -> GaiaEvents;
-  ExecuteMintings : (time: u64) -> GaiaEvents;
-  MintTokensToUser : (recipient: actor_id, amount: u256) -> GaiaEvents;
-  RemoveAdmin : (admin_to_remove: actor_id) -> GaiaEvents;
-  ScheduleMinting : (wallet: actor_id, amount: u128, minting_time: u64) -> GaiaEvents;
-  SetMinTokensToAdd : (min_tokens_to_add: u128) -> GaiaEvents;
-  SetTokensPerVara : (tokens_per_vara: u128) -> GaiaEvents;
-  SetVftContractId : (new_vft_contract_id: actor_id) -> GaiaEvents;
-  SwapGaiaEnergyToGaia : (from: actor_id, amount_of_vft: u128) -> GaiaEvents;
-  SwapTokensByNumOfVaras : () -> GaiaEvents;
-  SwapTokensToVaras : (amount_of_tokens: u128) -> GaiaEvents;
-  TransferGaiaCompanyToken : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
-  TransferGaiaETokens : (from: actor_id, to: actor_id, amount: u128) -> GaiaEvents;
+  AddAdmin : (new_admin: actor_id) -> result (null, GaiaErrors);
+  AddCarbonCertificate : (owner: actor_id, certificate_id: str, value: u256, issue_date: u64, expiry_date: u64) -> result (null, GaiaErrors);
+  AddCompanyToken : (tokens_to_add: u128) -> result (null, GaiaErrors);
+  AddDevice : (owner: actor_id, serial_number: str, location: str, type_device: str, device_brand: str) -> result (null, GaiaErrors);
+  AddTokensToContract : (tokens_to_add: u128) -> result (null, GaiaErrors);
+  ChangeCooldown : (conversion_cooldown: u64) -> result (null, GaiaErrors);
+  ChangeProperty : (property: PropertyName, value: u256) -> result (null, GaiaErrors);
+  ExecuteMintings : (time: u64) -> result (null, GaiaErrors);
+  GetTotalSupplyGaiaCompany : () -> result (u256, GaiaErrors);
+  GetTotalSupplyGaiaE : () -> result (u256, GaiaErrors);
+  MintTokensToUser : (recipient: actor_id, amount: u256) -> result (null, GaiaErrors);
+  RemoveAdmin : (admin_to_remove: actor_id) -> result (null, GaiaErrors);
+  ScheduleMinting : (wallet: actor_id, amount: u128, minting_time: u64) -> result (null, GaiaErrors);
+  SetMinTokensToAdd : (min_tokens_to_add: u128) -> result (null, GaiaErrors);
+  SetTokensPerVara : (tokens_per_vara: u128) -> result (null, GaiaErrors);
+  SetVftContractId : (new_vft_contract_id: actor_id) -> result (null, GaiaErrors);
+  SwapGaiaEnergyToGaia : (from: actor_id, amount_of_vft: u128) -> result (null, GaiaErrors);
+  SwapTokensByNumOfVaras : () -> result (null, GaiaErrors);
+  SwapTokensToVaras : (amount_of_tokens: u128) -> result (null, GaiaErrors);
+  TransferGaiaCompanyToken : (from: actor_id, to: actor_id, amount: u128) -> result (null, GaiaErrors);
+  TransferGaiaETokens : (from: actor_id, to: actor_id, amount: u128) -> result (null, GaiaErrors);
+  TransferOwnership : (new_owner: actor_id) -> result (null, GaiaErrors);
   query ContractTotalVarasStored : () -> GaiaQueryEvents;
   query GetAllProperties : () -> GaiaQueryEvents;
   query GetCarbonCertificates : () -> GaiaQueryEvents;
   query GetDevices : () -> GaiaQueryEvents;
   query GetEnergyProductionStats : (producer: actor_id, start_time: u64, end_time: u64) -> result (struct { u256, u256 }, GaiaErrors);
-  query GetMitings : () -> GaiaQueryEvents;
+  query GetMintings : () -> GaiaQueryEvents;
   query GetProducers : () -> GaiaQueryEvents;
   query GetSwapTotalsGaiaeToGaiaCompany : () -> GaiaQueryEvents;
-  query GetTotalSupplyGaiaCompany : () -> GaiaEvents;
-  query GetTotalSupplyGaiaE : () -> GaiaEvents;
   query GetTransferRecords : () -> GaiaQueryEvents;
-  query IsAdmin : () -> bool;
+  query GetUserInfo : (wallet: actor_id) -> result (GaiaQueryEvents, GaiaErrors);
   query TokensToSwapOneVara : () -> GaiaQueryEvents;
-  query TotalTokensCompany : (wallet: actor_id) -> GaiaQueryEvents;
-  query TotalTokensEnergy : (wallet: actor_id) -> GaiaQueryEvents;
-  query TotalTokensToSwap : () -> GaiaQueryEvents;
-  query TotalTokensToSwapAsU128 : () -> GaiaQueryEvents;
+  query TotalTokensCompany : (wallet: actor_id) -> result (u128, GaiaErrors);
+  query TotalTokensEnergy : (wallet: actor_id) -> result (u128, GaiaErrors);
+  query TotalTokensToSwap : () -> result (u256, GaiaErrors);
+  query TotalTokensToSwapAsU128 : () -> result (u128, GaiaErrors);
+
+  events {
+    VFTContractIdChanged: struct {
+      old: opt actor_id,
+      new: opt actor_id,
+    };
+    TokensSwapSuccessfullyEnergy: struct {
+      total_tokens: u128,
+      total_company_tokens: u128,
+    };
+    ApprovalSuccessful: struct {
+      owner: actor_id,
+      spender: actor_id,
+      amount: u128,
+    };
+    RefundOfVaras: u128;
+    VFTContractIdSet;
+    CertificateAdded: str;
+    AdminRemoved: actor_id;
+    DevicesAdded: str;
+    MinTokensToAddSet;
+    TokensAdded: str;
+    TokensBurned;
+    SetTokensPerVaras;
+    MintingScheduled: str;
+    MintingExecuted: struct {
+      successful: u32,
+      failed: u32,
+    };
+    TotalSwapInVaras: u128;
+    TokensSwapSuccessfully: struct {
+      total_tokens: u128,
+      total_varas: u128,
+    };
+    AdminAdded: actor_id;
+    Error: GaiaErrors;
+    TransferSuccessful: struct {
+      from: actor_id,
+      to: actor_id,
+      amount: u128,
+      timestamp: u64,
+    };
+    TotalSupplyRetrieved: u256;
+    PropertyChanged: struct {
+      str,
+      u256,
+    };
+    CooldownChanged: struct {
+      old_value: u64,
+      new_value: u64,
+    };
+    OwnershipTransferred: struct {
+      from: actor_id,
+      to: actor_id,
+    };
+  }
 };
 
 
 
-
-`;
+`
 
 const accountName = 'Admin';
 const accountMnemonic =process.env.MNEMONIC

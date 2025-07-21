@@ -18,6 +18,7 @@ exports.processUserMessage = async (req, res) => {
       return res.status(200).send({ message: actionResult.message });
     }
     // Si la IA ejecutó una acción, devolver el resultado
+    console.log(actionResult);
     return res.status(200).send(actionResult);
   } catch (error) {
     console.error("Error en processUserMessage:", error);

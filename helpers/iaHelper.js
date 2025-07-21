@@ -3,6 +3,7 @@ const {
   executeCommand,
   executeQueryForAll,
 } = require("../controllers/sailsController");
+const { log } = require("async");
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -26,9 +27,9 @@ getBalanceEnergy: async (wallet) => {
 
   const result = {
     energyBalance: balanceEnergy,
-    summary: `Tienes ${balanceEnergy} tokens Gaia Energy en tu wallet.`
+    summary: `Tienes ${balanceEnergy.ok} tokens Gaia Energy en tu wallet.`
   };
-
+console.log(result);
   return { success: true, result };
 },
 
@@ -43,7 +44,7 @@ getBalanceEnergy: async (wallet) => {
 
       const result = {
     companyBalance: balanceCompany,
-    summary: `Tienes ${balanceCompany} tokens Gaia en tu wallet.`
+    summary: `Tienes ${balanceCompany.ok} tokens Gaia en tu wallet.`
   };
 
 

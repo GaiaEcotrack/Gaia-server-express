@@ -29,7 +29,7 @@ app.use(morgan('tiny'));
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 300, // máximo  peticiones por IP
+    max: 1500, // máximo  peticiones por IP
     keyGenerator: (req) => req.ip, // Utiliza la IP real obtenida a través del proxy
 });
 app.use(limiter);
