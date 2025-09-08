@@ -94,6 +94,9 @@ type GaiaErrors = enum {
     amount: u128,
     divisible_by: u128,
   },
+  CertificateHashAlreadyUsed,
+  CarbonCreditNotFound,
+  GaiaCContractIdNotSet,
 };
 
 type PropertyName = enum {
@@ -127,6 +130,7 @@ type GaiaQueryEvents = enum {
   Producers: vec EnergyProduction,
   PropertiesFetched: GaiaProperties,
   CarbonCertificates: vec CarbonCertificates,
+  CarbonCredits: vec CarbonCredit,
   TransferRecords: vec TransferRecord,
   UserInfo: struct {
     wallet: actor_id,
@@ -181,6 +185,16 @@ type CarbonCertificates = struct {
   expiry_date: u64,
 };
 
+type CarbonCredit = struct {
+  project_id: str,
+  co2_tonnes: u32,
+  certificate_hash: str,
+  verifier_name: str,
+  gps_coords: str,
+  owner: actor_id,
+  timestamp_range: struct { u64, u64 },
+};
+
 type TransferRecord = struct {
   from: actor_id,
   to: actor_id,
@@ -191,7 +205,7 @@ type TransferRecord = struct {
 
 constructor {
   New : ();
-  NewWithData : (vft_contract_id: opt actor_id, gaia_company_token: opt actor_id, min_tokens_to_add: u128, tokens_per_vara: u128, gaia_e_to_gaia_rate: u256, min_conversion_amount: u256, max_daily_conversion: u256, min_gaia_e_transfer: u256, max_gaia_e_per_kwh: u256, kwh_por_token: u256, conversion_cooldown: u64);
+  NewWithData : (vft_contract_id: opt actor_id, gaia_company_token: opt actor_id, gaia_C: opt actor_id, min_tokens_to_add: u128, tokens_per_vara: u128, gaia_e_to_gaia_rate: u256, min_conversion_amount: u256, max_daily_conversion: u256, min_gaia_e_transfer: u256, max_gaia_e_per_kwh: u256, kwh_por_token: u256, conversion_cooldown: u64);
 };
 
 service GaiaService {
@@ -214,12 +228,13 @@ service GaiaService {
   SwapGaiaEnergyToGaia : (from: actor_id, amount_of_vft: u128) -> result (null, GaiaErrors);
   SwapTokensByNumOfVaras : () -> result (null, GaiaErrors);
   SwapTokensToVaras : (amount_of_tokens: u128) -> result (null, GaiaErrors);
+  TokenizeCarbonCredit : (project_id: str, co2_tonnes: u32, certificate_hash: str, verifier_name: str, gps_coords: str, recipient: actor_id, start_date: u64, end_date: u64) -> result (null, GaiaErrors);
   TransferGaiaCompanyToken : (from: actor_id, to: actor_id, amount: u128) -> result (null, GaiaErrors);
   TransferGaiaETokens : (from: actor_id, to: actor_id, amount: u128) -> result (null, GaiaErrors);
   TransferOwnership : (new_owner: actor_id) -> result (null, GaiaErrors);
   query ContractTotalVarasStored : () -> GaiaQueryEvents;
   query GetAllProperties : () -> GaiaQueryEvents;
-  query GetCarbonCertificates : () -> GaiaQueryEvents;
+  query GetCarbonCredits : (owner: actor_id) -> GaiaQueryEvents;
   query GetDevices : () -> GaiaQueryEvents;
   query GetEnergyProductionStats : (producer: actor_id, start_time: u64, end_time: u64) -> result (struct { u256, u256 }, GaiaErrors);
   query GetMintings : () -> GaiaQueryEvents;
@@ -287,8 +302,19 @@ service GaiaService {
       from: actor_id,
       to: actor_id,
     };
+    CarbonCreditTokenized: struct {
+      token_id: u32,
+      co2_tonnes: u32,
+      owner: actor_id,
+    };
+    CarbonCreditTransferred: struct {
+      token_id: u32,
+      from: actor_id,
+      to: actor_id,
+    };
   }
 };
+
 
 
 

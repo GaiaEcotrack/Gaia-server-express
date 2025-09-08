@@ -30,7 +30,7 @@ const sendMessageContract = async (wallet, tokens, kw) => {
           tx_id: null,
           to:decodeAddress(wallet),
           tokens: Number(tokens),
-          password:"E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6"
+          password: process.env.GEAR_PASSWORD || ""
         },
       },
       0,
@@ -45,7 +45,7 @@ const sendMessageContract = async (wallet, tokens, kw) => {
           tx_id: null,
           to:decodeAddress(wallet),
           tokens: Number(tokens),
-          password:"E15597AF98B7CC76E088FE55EE4A2E7BA8C73CF71264C272FE1FABBAF5111BA6"
+          password: process.env.GEAR_PASSWORD || ""
         },
       },
       gasLimit: gasToSpend(gas),
@@ -58,7 +58,7 @@ const sendMessageContract = async (wallet, tokens, kw) => {
     const transferExtrinsic = await gearApiInstance.message.send(message, metadata);
     const {nonce} = await gearApiInstance.query.system.account("5CM3F7Rn2JNUTYfPLQ9a3L6mMVAiQQ2rWV1X2azmXyxTgmxF")
 
-    const mnemonic = 'sun pill sentence spoil ripple october funny ensure illness equal car demise';
+    const mnemonic = process.env.GEAR_MNEMONIC || '';
     const { seed } = GearKeyring.generateSeed(mnemonic);
     const keyring = await GearKeyring.fromSeed(seed, 'admin');
 

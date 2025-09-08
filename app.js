@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const updateFunctions = require('./controllers/updateKwController');
 const varaConnection = require('./controllers/sailsController')
 const verifyToken = require('./middlewares/authMiddleware');
+const { errorHandler, notFoundHandler, jsonErrorHandler, validateContentType } = require('./middlewares/errorMiddleware');
 const cron = require('node-cron');
 const morgan = require('morgan');
 
@@ -21,25 +23,89 @@ const app = express();
 // Configurar trust proxy
 app.set('trust proxy', true); 
 
-// Middleware to parse JSON
-app.use(express.json());
-// app.use(morgan('combined'));
-app.use(morgan('tiny'));
+// Middleware de seguridad con helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
 
+// Middleware to parse JSON con límites de seguridad
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Configurar logging seguro
+app.use(morgan('combined', {
+  skip: (req, res) => res.statusCode < 400,
+  stream: {
+    write: (message) => {
+      // Filtrar información sensible en logs
+      const sanitizedMessage = message
+        .replace(/password=([^&\s]+)/g, 'password=***')
+        .replace(/token=([^&\s]+)/g, 'token=***')
+        .replace(/secret=([^&\s]+)/g, 'secret=***');
+      console.log(sanitizedMessage.trim());
+    }
+  }
+}));
+
+// Rate limiting más restrictivo
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 1500, // máximo  peticiones por IP
-    keyGenerator: (req) => req.ip, // Utiliza la IP real obtenida a través del proxy
+    max: 100, // máximo 100 peticiones por IP (reducido de 1500)
+    keyGenerator: (req) => req.ip,
+    message: {
+        error: 'Demasiadas peticiones desde esta IP, intenta de nuevo en 15 minutos'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
 });
+
+// Aplicar rate limiting a todas las rutas
 app.use(limiter);
 
+// Rate limiting específico para autenticación
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // máximo 5 intentos de login por IP
+    keyGenerator: (req) => req.ip,
+    message: {
+        error: 'Demasiados intentos de login, intenta de nuevo en 15 minutos'
+    },
+    skipSuccessfulRequests: true,
+});
+
+// CORS más restrictivo
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
+    process.env.ALLOWED_ORIGINS.split(',') : 
+    ['http://localhost:3000', 'https://app.gaiaecotrack.com'];
+
 const corsOptions = {
-    origin: '*',
+    origin: function (origin, callback) {
+        // Permitir requests sin origin (como aplicaciones móviles)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Content-Length'],
-    credentials: true
+    credentials: true,
+    maxAge: 86400 // 24 horas
 };
 
 app.use(cors(corsOptions));
@@ -55,8 +121,8 @@ const userInstaller = require('./routes/installerRoutes');
 const salisRoute = require('./routes/salisRoutes');
 const kycRoute = require('./routes/sendEmailRoute')
 const chatbotRoutes = require("./routes/chatbotRoute");
-const stripeRoute = require("./routes/stripeRoute");
 const paymentRoute = require("./routes/paymentRoutes");
+const carbonRoutes = require("./routes/carbonRoutes");
 
 // Use routes
 app.use('/api', apiRoutes);
@@ -66,17 +132,33 @@ app.get("/", (req, res) => {
       version: version,
     });
   });
+
+// Aplicar rate limiting específico para autenticación
+app.use('/auth', authLimiter, authRoutes);
+
 app.use('/generator',verifyToken,generadorRoutes);
 app.use('/credencials',verifyToken, credencialsUser);
-app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/comercial',userComercial)
 app.use('/installer',userInstaller)
 app.use('/service',verifyToken,salisRoute)
 app.use('/kyc',kycRoute)
 app.use('/chatbot',chatbotRoutes)
-app.use('/stripe',stripeRoute)
+
 app.use('/payment',paymentRoute)
+app.use('/carbon', carbonRoutes);
+
+// Middleware de validación de contenido
+app.use(validateContentType);
+
+// Middleware de manejo de errores de JSON
+app.use(jsonErrorHandler);
+
+// Middleware para rutas no encontradas (debe ir después de todas las rutas)
+app.use(notFoundHandler);
+
+// Middleware de manejo de errores (debe ir al final)
+app.use(errorHandler);
 
 
 let isUpdating = false;
