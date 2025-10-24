@@ -36,7 +36,8 @@ const verifyCredentials = async (username, password) => {
   try {
     // Obtener credenciales hasheadas del entorno
     const storedUsername = process.env.ADMIN_USER;
-    const storedPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+    const storedPasswordHash = process.env.ADMIN_PASSWORD
+    ;
     
     if (!storedUsername || !storedPasswordHash) {
       throw new Error('Credenciales de administrador no configuradas');
