@@ -123,7 +123,7 @@ const kycRoute = require('./routes/sendEmailRoute')
 const chatbotRoutes = require("./routes/chatbotRoute");
 const paymentRoute = require("./routes/paymentRoutes");
 const carbonRoutes = require("./routes/carbonRoutes");
-
+const createWalletRoute = require('./routes/createWalletRoute');
 // Use routes
 app.use('/api', apiRoutes);
 app.get("/", (req, res) => {
@@ -144,24 +144,9 @@ app.use('/installer',userInstaller)
 app.use('/service',verifyToken,salisRoute)
 app.use('/kyc',kycRoute)
 app.use('/chatbot',chatbotRoutes)
-
+app.use('/create-wallet',createWalletRoute)
 app.use('/payment',paymentRoute)
 app.use('/carbon', carbonRoutes);
-
-// Middleware de validación de contenido
-app.use(validateContentType);
-
-// Middleware de manejo de errores de JSON
-app.use(jsonErrorHandler);
-
-// Middleware para rutas no encontradas (debe ir después de todas las rutas)
-app.use(notFoundHandler);
-
-// Middleware de manejo de errores (debe ir al final)
-app.use(errorHandler);
-
-
-let isUpdating = false;
 
 // Función para actualizar usuarios
 async function startUpdatingUsers() {
@@ -185,6 +170,23 @@ app.get('/update-users', async (req, res) => {
         res.send('Se terminó el proceso de actualización.');
     }
 });
+
+// Middleware de validación de contenido
+app.use(validateContentType);
+
+// Middleware de manejo de errores de JSON
+app.use(jsonErrorHandler);
+
+// Middleware para rutas no encontradas (debe ir después de todas las rutas)
+app.use(notFoundHandler);
+
+// Middleware de manejo de errores (debe ir al final)
+app.use(errorHandler);
+
+
+let isUpdating = false;
+
+
 
 app.get('/api/protected-route', verifyToken, (req, res) => {
     // req.user contiene la información decodificada del token
