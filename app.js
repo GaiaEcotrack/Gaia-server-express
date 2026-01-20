@@ -214,13 +214,13 @@ cron.schedule('00 20 * * *', async () => {
 
 
 const IP = '0.0.0.0'; // Cambia esta IP por la correcta de tu servidor
-const PORT =  8080;
+const PORT = process.env.PORT || 8080;
 
 varaConnection.initializeConnection()
 
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://${IP}:${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 
 module.exports = app;
