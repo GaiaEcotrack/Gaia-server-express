@@ -1,10 +1,12 @@
 const { Types } = require('mongoose');
 const Joi = require('joi');
+const bcrypt = require('bcryptjs');
 const User = require('../models/userModel');
 
 // Esquemas de validación mejorados
 const userSchema = Joi.object({
   email: Joi.string().email().required().max(255),
+  password: Joi.string().min(6).max(100).required(),
   full_name: Joi.string().min(2).max(100).required(),
   identification_number: Joi.string().min(5).max(20).required(),
   address: Joi.string().min(10).max(200).required(),
@@ -32,7 +34,8 @@ const userSchema = Joi.object({
     latitude: Joi.number().min(-90).max(90).required(),
     longitude: Joi.number().min(-180).max(180).required()
   }).required(),
-  role: Joi.string().valid('Generator', 'Admin', 'Installer', 'Comercial').default('Generator')
+  role: Joi.string().valid('Generator', 'Admin', 'Installer', 'Comercial').default('Generator'),
+  wallet_address: Joi.string().allow('').optional().default('')
 });
 
 const updateSchema = Joi.object({
@@ -49,6 +52,9 @@ const updateSchema = Joi.object({
 const sanitizeInput = (data) => {
   if (typeof data === 'string') {
     return data.trim().replace(/[<>]/g, '');
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeInput(item));
   }
   if (typeof data === 'object' && data !== null) {
     const sanitized = {};
@@ -228,8 +234,13 @@ exports.addUser = async (req, res) => {
 
     const devices = buildDevices(sanitizedData.devices);
 
+    // Hashear la contraseña antes de guardarla
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(sanitizedData.password, saltRounds);
+
     const newUser = await User.create({
       email,
+      password: hashedPassword,
       full_name: sanitizedData.full_name,
       identification_number: sanitizedData.identification_number,
       address: sanitizedData.address,

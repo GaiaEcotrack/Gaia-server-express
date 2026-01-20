@@ -1,21 +1,30 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const User = require('../models/userModel');
 const router = express.Router();
 
 // Middleware de validación
 const validateLoginInput = (req, res, next) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
   
-  if (!username || !password) {
+  if (!email || !password) {
     return res.status(400).json({ 
-      error: 'Usuario y contraseña son requeridos' 
+      error: 'Email y contraseña son requeridos' 
     });
   }
   
-  if (username.length < 3 || password.length < 6) {
+  // Validar formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
     return res.status(400).json({ 
-      error: 'Usuario debe tener al menos 3 caracteres y contraseña 6 caracteres' 
+      error: 'Formato de email inválido' 
+    });
+  }
+  
+  if (password.length < 6) {
+    return res.status(400).json({ 
+      error: 'La contraseña debe tener al menos 6 caracteres' 
     });
   }
   
@@ -32,63 +41,77 @@ const generateSecureToken = (payload) => {
 };
 
 // Función para verificar credenciales de forma segura
-const verifyCredentials = async (username, password) => {
+const verifyCredentials = async (email, password) => {
   try {
-    // Obtener credenciales hasheadas del entorno
-    const storedUsername = process.env.ADMIN_USER;
-    const storedPasswordHash = process.env.ADMIN_PASSWORD
-    ;
+    // Buscar usuario por email en la base de datos
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     
-    if (!storedUsername || !storedPasswordHash) {
-      throw new Error('Credenciales de administrador no configuradas');
+    if (!user) {
+      return null; // Usuario no encontrado
     }
     
-    // Verificar username
-    if (username !== storedUsername) {
-      return false;
+    // Verificar contraseña usando bcrypt
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    
+    if (!isValidPassword) {
+      return null; // Contraseña incorrecta
     }
     
-    // Verificar contraseña hasheada
-    const isValidPassword = password === storedPasswordHash;
-    return isValidPassword;
+    // Retornar el usuario si las credenciales son válidas
+    return user;
     
   } catch (error) {
     console.error('Error verificando credenciales:', error);
-    return false;
+    return null;
   }
 };
 
 // Ruta de login segura
 router.post('/login', validateLoginInput, async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     
     // Verificar credenciales
-    const isValid = await verifyCredentials(username, password);
+    const user = await verifyCredentials(email, password);
     
-    if (!isValid) {
+    if (!user) {
       // Log de intento fallido (sin exponer información sensible)
-      console.log(`Intento de login fallido para usuario: ${username} desde IP: ${req.ip}`);
+      console.log(`Intento de login fallido para email: ${email} desde IP: ${req.ip}`);
       
       return res.status(401).json({ 
         error: 'Credenciales inválidas' 
       });
     }
     
-    // Generar token seguro
+    // Generar token seguro con información del usuario
     const token = generateSecureToken({ 
-      username,
-      role: 'admin',
+      userId: user._id.toString(),
+      email: user.email,
+      username: user.username,
+      role: user.role,
       iat: Date.now()
     });
     
     // Log de login exitoso
-    console.log(`Login exitoso para usuario: ${username} desde IP: ${req.ip}`);
+    console.log(`Login exitoso para usuario: ${user.email} (${user.role}) desde IP: ${req.ip}`);
+    
+    // Preparar datos del usuario para la respuesta (sin información sensible)
+    const userData = {
+      id: user._id.toString(),
+      email: user.email,
+      username: user.username,
+      full_name: user.full_name,
+      role: user.role,
+      verified_email: user.verified_email,
+      verified_sms: user.verified_sms,
+      verified_2fa: user.verified_2fa,
+      membresia: user.membresia
+    };
     
     res.json({ 
       token,
       expiresIn: '24h',
-      user: { username, role: 'admin' }
+      user: userData
     });
     
   } catch (error) {
@@ -102,12 +125,12 @@ router.post('/login', validateLoginInput, async (req, res) => {
 // Ruta de servicios con token de corta duración
 router.post('/services', validateLoginInput, async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     
     // Verificar credenciales
-    const isValid = await verifyCredentials(username, password);
+    const user = await verifyCredentials(email, password);
     
-    if (!isValid) {
+    if (!user) {
       return res.status(401).json({ 
         error: 'Credenciales inválidas' 
       });
@@ -115,15 +138,22 @@ router.post('/services', validateLoginInput, async (req, res) => {
     
     // Token de corta duración para servicios
     const token = generateSecureToken({ 
-      username,
-      role: 'service',
+      userId: user._id.toString(),
+      email: user.email,
+      username: user.username,
+      role: user.role,
       iat: Date.now()
     });
     
     res.json({ 
       token,
       expiresIn: '5m',
-      user: { username, role: 'service' }
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        username: user.username,
+        role: user.role
+      }
     });
     
   } catch (error) {

@@ -35,6 +35,7 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true
   },
+  password: { type: String, required: true },
   full_name: { type: String, required: true },
   identification_number: { type: String, required: true, unique: true, trim: true },
   address: { type: String, required: true },
