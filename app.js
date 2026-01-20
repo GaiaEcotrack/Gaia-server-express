@@ -88,7 +88,7 @@ const authLimiter = rateLimit({
 // CORS más restrictivo
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
     process.env.ALLOWED_ORIGINS.split(',') : 
-    ['http://localhost:3000', 'https://app.gaiaecotrack.com'];
+    ['http://localhost:3000', 'https://app.gaiaecotrack.com', 'https://stage.gaiaecotrack.com'];
 
 const corsOptions = {
     origin: function (origin, callback) {
