@@ -358,23 +358,21 @@ let keyring = null;
 
 const initializeConnection = async () => {
   try {
-      if (!process.env.MNEMONIC) {
-          throw new Error('MNEMONIC no está definido en las variables de entorno');
-      }
-      
-      if (!sailsCalls || !keyring) {
-          console.log('Inicializando conexión a la red y keyring...');
-          sailsCalls = await sailsInstance(network, contractId, idl);
-          keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
-          console.log('Conexión con Vara establecida correctamente');
-          return { success: true };
-      } else {
-          console.log('Conexión y keyring ya inicializados.');
-          return { success: true, message: 'Ya inicializado' };
-      }
+    if (!process.env.MNEMONIC) {
+      throw new Error('MNEMONIC no está definido');
+    }
+
+    if (!sailsCalls || !keyring) {
+      console.log('Inicializando conexión a la red y keyring...');
+      sailsCalls = await sailsInstance(network, contractId, idl);
+      keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
+      console.log('Conexión con Vara establecida correctamente');
+    }
+
+    return { success: true };
   } catch (e) {
-      console.error('Error al inicializar conexión con Vara:', e);
-      throw e; // Propaga el error para que pueda ser manejado por el llamador
+    console.error('❌ Error al inicializar conexión con Vara:', e);
+    return { success: false, error: e.message }; // ✅ NO throw
   }
 };
 
@@ -399,22 +397,16 @@ const executeCommand = async (service, method, callArguments) => {
 
 const executeQueryForAll = async (service, method, callArguments) => {
   try {
-    
-      // Enviar la consulta al programa
-      const response = await sailsCalls.query(
-          `${service}/${method}`,
-          { callArguments }
-      );
-
-
-      
-
-      // Retornar la respuesta
-      return response
+    return await sailsCalls.query(
+      `${service}/${method}`,
+      { callArguments }
+    );
   } catch (e) {
-      console.error('Error while reading state:', e);
+    console.error(`❌ Error en query ${method}:`, e);
+    return null; // o { error: e.message }
   }
 };
+
 
 
 // Definir la función para ejecutar la consulta

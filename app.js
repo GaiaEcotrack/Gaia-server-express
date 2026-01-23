@@ -20,6 +20,15 @@ dotenv.config();
 
 const app = express();
 
+
+process.on('unhandledRejection', (reason) => {
+  console.error('🔥 Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+});
+
 // Configurar trust proxy
 app.set('trust proxy', true); 
 
