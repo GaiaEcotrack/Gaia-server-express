@@ -150,7 +150,7 @@ app.use('/credencials',verifyToken, credencialsUser);
 app.use('/users', userRoutes);
 app.use('/comercial',userComercial)
 app.use('/installer',userInstaller)
-app.use('/service',verifyToken,salisRoute)
+app.use('/service',salisRoute)
 app.use('/kyc',kycRoute)
 app.use('/chatbot',chatbotRoutes)
 app.use('/create-wallet',createWalletRoute)

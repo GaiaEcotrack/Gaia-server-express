@@ -1,10 +1,12 @@
-const { sailsInstance, signerFromAccount } = require('../services/SailsService/utils');
+const {
+  sailsInstance,
+  signerFromAccount,
+} = require("../services/SailsService/utils");
 
-
-
-//INFO CONTRACT 
-const network = 'wss://testnet.vara.network'; // network, testnet
-const contractId = '0xa234c1c4b6f0485825d40714a7505e2d423697c288c0298031d4e0d1273c669c';
+//INFO CONTRACT
+const network = "wss://testnet.vara.network"; // network, testnet
+const contractId =
+  "0xa234c1c4b6f0485825d40714a7505e2d423697c288c0298031d4e0d1273c669c";
 const idl = `
 type GaiaErrors = enum {
   MinTokensToAdd: u128,
@@ -345,10 +347,10 @@ service GaiaService {
 
 
 
-`
+`;
 
-const accountName = 'Admin';
-const accountMnemonic =process.env.MNEMONIC
+const accountName = "Admin";
+const accountMnemonic = process.env.MNEMONIC;
 // Definir la función para ejecutar el comando
 //send tokens
 
@@ -356,105 +358,115 @@ const accountMnemonic =process.env.MNEMONIC
 let sailsCalls = null;
 let keyring = null;
 
+const getSails = async () => {
+  if (
+    !sailsCalls ||
+    !sailsCalls.api ||
+    !sailsCalls.api.isConnected
+  ) {
+    console.log("🔄 Reconectando a Vara...");
+
+    sailsCalls = await sailsInstance(network, contractId, idl);
+    keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
+
+    console.log("✅ Conectado a Vara");
+  }
+
+  return { sailsCalls, keyring };
+};
 const initializeConnection = async () => {
   try {
     if (!process.env.MNEMONIC) {
-      throw new Error('MNEMONIC no está definido');
+      throw new Error("MNEMONIC no está definido");
     }
 
     if (!sailsCalls || !keyring) {
-      console.log('Inicializando conexión a la red y keyring...');
+      console.log("Inicializando conexión a la red y keyring...");
       sailsCalls = await sailsInstance(network, contractId, idl);
       keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
-      console.log('Conexión con Vara establecida correctamente');
+      console.log("Conexión con Vara establecida correctamente");
     }
 
     return { success: true };
   } catch (e) {
-    console.error('❌ Error al inicializar conexión con Vara:', e);
+    console.error("❌ Error al inicializar conexión con Vara:", e);
     return { success: false, error: e.message }; // ✅ NO throw
   }
 };
 
-const executeCommand = async (service, method, callArguments) => {
+const executeCommand = async (service, method, callArguments = []) => {
   try {
-      // Asegurarse de que la conexión y el keyring están inicializados
-      // Ejecutar el comando utilizando la instancia existente
-      const response = await sailsCalls.command(
-          `${service}/${method}`,
-          keyring,
-          { callArguments }
-      );
+    const { sailsCalls, keyring } = await getSails();
 
-      console.log('Response:', response);
-      return response;
+    return await sailsCalls.command(
+      `${service}/${method}`,
+      keyring,
+      { callArguments }
+    );
   } catch (e) {
-      console.error('Error while executing command:', e);
-      throw new Error(`Error while executing command: ${e}`);
+    console.error("❌ Error command:", e.message);
+    throw e;
   }
 };
 
-
-const executeQueryForAll = async (service, method, callArguments) => {
+const executeQueryForAll = async (service, method, callArguments = []) => {
   try {
+    const { sailsCalls } = await getSails();
+
     return await sailsCalls.query(
       `${service}/${method}`,
       { callArguments }
     );
   } catch (e) {
-    console.error(`❌ Error en query ${method}:`, e);
-    return null; // o { error: e.message }
+    console.error(`❌ Error en query ${method}:`, e.message);
+    return null;
   }
 };
-
-
-
 // Definir la función para ejecutar la consulta
-const executeQuery = async (req,res) => {
-    try {
-      const {service,method} = req.params
-      const callArguments = Array.isArray(req.body) ? req.body : [];
-        // Set the SailsCalls instance
-        const sailsCalls = await sailsInstance(network, contractId, idl);
+const executeQuery = async (req, res) => {
+  try {
+    const { service, method } = req.params;
+    const callArguments = Array.isArray(req.body) ? req.body : [];
+    // Set the SailsCalls instance
+    const sailsCalls = await sailsInstance(network, contractId, idl);
 
-        // Enviar la consulta al programa
-        const response = await sailsCalls.query(
-            `${service}/${method}`,
-            { callArguments }
-        );
+    // Enviar la consulta al programa
+    const response = await sailsCalls.query(`${service}/${method}`, {
+      callArguments,
+    });
 
-        console.log(callArguments);
+    console.log(callArguments);
 
-        // Retornar la respuesta
-        res.status(200).send(response)
-    } catch (e) {
-        console.error('Error while reading state:', e);
-        res.status(400).send(e)
-    }
+    // Retornar la respuesta
+    res.status(200).send(response);
+  } catch (e) {
+    console.error("Error while reading state:", e);
+    res.status(400).send(e);
+  }
 };
 const executeAllQueries = async (req, res) => {
   try {
     const methods = [
-      'ContractTotalVarasStored',
-      'GetAllProperties',
-      'GetConfig',
-      'GetDevices',
-      'GetMintings',
-      'GetProducers',
-      'GetSwapTotalsGaiaeToGaiaCompany',
-      'GetTransferRecords',
-      'TokensToSwapOneVara',
-      'TotalTokensToSwap',
-      'TotalTokensToSwapAsU128',
+      "ContractTotalVarasStored",
+      "GetAllProperties",
+      "GetConfig",
+      "GetDevices",
+      "GetMintings",
+      "GetProducers",
+      "GetSwapTotalsGaiaeToGaiaCompany",
+      "GetTransferRecords",
+      "TokensToSwapOneVara",
+      "TotalTokensToSwap",
+      "TotalTokensToSwapAsU128",
     ];
 
     const results = {};
 
     await Promise.all(
       methods.map(async (method) => {
-        const response = await executeQueryForAll('GaiaService', method, []);
+        const response = await executeQueryForAll("GaiaService", method, []);
         results[method] = response;
-      })
+      }),
     );
 
     // Ejemplo: limitar producers si vienen muchos
@@ -465,30 +477,70 @@ const executeAllQueries = async (req, res) => {
 
     res.status(200).send(results);
   } catch (e) {
-    console.error('Error while executing queries:', e);
+    console.error("Error while executing queries:", e);
     res.status(400).send(e);
   }
 };
 
+const executeDynamicQueries = async (queries) => {
+  if (!sailsCalls) {
+    throw new Error("Sails no inicializado. Llamá a initializeConnection()");
+  }
+
+  const queriesArray = Array.isArray(queries) ? queries : [queries];
+  const result = {};
+
+  await Promise.all(
+    queriesArray.map(async ({ service, method, args = [] }) => {
+      try {
+        const response = await sailsCalls.query(
+          `${service}/${method}`,
+          { callArguments: args }
+        );
+
+        result[method] = {
+          ok: true,
+          data: response,
+        };
+      } catch (error) {
+        result[method] = {
+          ok: false,
+          error: error?.message || String(error),
+        };
+      }
+    })
+  );
+
+  return result;
+};
+
+const executeQueriesController = async (req, res) => {
+  try {
+    const result = await executeDynamicQueries(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 //
-const postService = async (req,res) =>{
-  const {service,method} = req.params
+const postService = async (req, res) => {
+  const { service, method } = req.params;
   const callArguments = Array.isArray(req.body) ? req.body : [];
   try {
-    const response = await executeCommand(service,method,callArguments)
-    res.status(200).send(response)
+    const response = await executeCommand(service, method, callArguments);
+    res.status(200).send(response);
   } catch (error) {
-    res.status(400).send(error)
-    
+    res.status(400).send(error);
   }
-}
+};
 
 module.exports = {
-    executeCommand,
-    executeQuery,
-    initializeConnection ,
-    postService,
-    executeAllQueries,
-    executeQueryForAll
-    
+  executeCommand,
+  executeQuery,
+  initializeConnection,
+  postService,
+  executeAllQueries,
+  executeQueryForAll,
+  executeQueriesController,
 };
