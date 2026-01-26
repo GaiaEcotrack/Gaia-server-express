@@ -357,42 +357,48 @@ const accountMnemonic = process.env.MNEMONIC;
 // Almacenar las instancias para reutilizarlas
 let sailsCalls = null;
 let keyring = null;
+let isConnecting = false;
 
 const getSails = async () => {
-  if (
-    !sailsCalls ||
-    !sailsCalls.api ||
-    !sailsCalls.api.isConnected
-  ) {
-    console.log("🔄 Reconectando a Vara...");
+  if (sailsCalls) {
+    return { sailsCalls, keyring };
+  }
+
+  if (isConnecting) {
+    // espera activa simple (evita race condition)
+    while (isConnecting) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return { sailsCalls, keyring };
+  }
+
+  try {
+    isConnecting = true;
+
+    console.log("🔄 Conectando a Vara...");
 
     sailsCalls = await sailsInstance(network, contractId, idl);
-    keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
+    keyring = await signerFromAccount(
+      accountName,
+      process.env.MNEMONIC,
+    );
 
     console.log("✅ Conectado a Vara");
+  } catch (err) {
+    sailsCalls = null;
+    keyring = null;
+    console.error("❌ Error conectando a Vara:", err);
+    throw err;
+  } finally {
+    isConnecting = false;
   }
 
   return { sailsCalls, keyring };
 };
 const initializeConnection = async () => {
-  try {
-    if (!process.env.MNEMONIC) {
-      throw new Error("MNEMONIC no está definido");
-    }
-
-    if (!sailsCalls || !keyring) {
-      console.log("Inicializando conexión a la red y keyring...");
-      sailsCalls = await sailsInstance(network, contractId, idl);
-      keyring = await signerFromAccount(accountName, process.env.MNEMONIC);
-      console.log("Conexión con Vara establecida correctamente");
-    }
-
-    return { success: true };
-  } catch (e) {
-    console.error("❌ Error al inicializar conexión con Vara:", e);
-    return { success: false, error: e.message }; // ✅ NO throw
-  }
+  await getSails();
 };
+
 
 const executeCommand = async (service, method, callArguments = []) => {
   try {
@@ -428,7 +434,7 @@ const executeQuery = async (req, res) => {
     const { service, method } = req.params;
     const callArguments = Array.isArray(req.body) ? req.body : [];
     // Set the SailsCalls instance
-    const sailsCalls = await sailsInstance(network, contractId, idl);
+    const { sailsCalls } = await getSails();
 
     // Enviar la consulta al programa
     const response = await sailsCalls.query(`${service}/${method}`, {
@@ -470,9 +476,9 @@ const executeAllQueries = async (req, res) => {
     );
 
     // Ejemplo: limitar producers si vienen muchos
-    if (results.GetProducers?.Producers) {
-      results.GetProducers.Producers =
-        results.GetProducers.Producers.slice(-100);
+    if (results.GetProducers?.producers) {
+      results.GetProducers.producers =
+        results.GetProducers.producers.slice(-100);
     }
 
     res.status(200).send(results);
